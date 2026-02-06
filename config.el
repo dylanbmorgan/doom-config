@@ -1,13 +1,14 @@
 ;;; $DOOMDIR/config.el -*- lexical-binding: t; -*-
 
-;; (setq browse-url-browser-function 'browse-url-firefox
-;;       browse-url-generic-program "firefox")
+(after! browse-url
+  (setq browse-url-browser-function 'browse-url-firefox
+        browse-url-generic-program (executable-find "firefox")))
 
-(setq browse-url-browser-function 'xwidget-webkit-browse-url)
+;; (setq browse-url-browser-function 'xwidget-webkit-browse-url)
 
 (add-transient-hook! 'focus-out-hook (atomic-chrome-start-server))
 
-;; (setq-default major-mode 'org-mode)
+(setq-default major-mode 'org-mode)
 
 (setq doom-fallback-buffer-name "► Doom"
       +doom-dashboard-name "► Doom")
@@ -31,73 +32,17 @@
       :desc "Focus lines" "F" #'consult-focus-lines
       :desc "History" "h" #'consult-history)
 
-(use-package! chatgpt-shell
-  :config
-  (setq chatgpt-shell-openai-key
-        (lambda ()
-          (auth-source-pick-first-password :host "api.openai.com")))
-  (setq chatgpt-shell-anthropic-key
-        (lambda ()
-          (auth-source-pick-first-password :host "api.anthropic.com")))
-  (setq chatgpt-shell-model-version "gpt-4o")
-  (setq chatgpt-shell-insert-dividers t))
-
-(map! :leader
-      (:prefix-map ("a" . "ai")
-       :desc "chatgpt shell" "a" #'chatgpt-shell
-       :desc "C-c C-c" "C" #'chatgpt-shell-ctrl-c-ctrl-c
-       (:prefix ("d" . "describe")
-        :desc "code" "c" #'chatgpt-shell-describe-code
-        :desc "image" "i" #'chatgpt-shell-describe-image)
-       :desc "edit block" "e" #'chatgpt-shell-edit-block-at-point
-       :desc "execute babel" "B" #'chatgpt-shell-execute-babel-block-action-at-point
-       :desc "execute block" "b" #'chatgpt-shell-execute-block-action-at-point
-       :desc "fix error" "E" #'chatgpt-shell-fix-error-at-point
-       :desc "create unit test" "u" #'chatgpt-shell-generate-unit-test
-       :desc "interrupt" "I" #'chatgpt-shell-interrupt
-       :desc "awesome prompts" "A" #'chatgpt-shell-load-awesome-prompts
-       :desc "mark dwim" "M" #'chatgpt-shell-mark-at-point-dwim
-       :desc "version" "V" #'chatgpt-shell-model-version
-       :desc "next" "n" #'chatgpt-shell-next-item
-       :desc "previous" "N" #'chatgpt-shell-previous-item
-       :desc "prompt minibuffer" "f" #'chatgpt-shell-prompt
-       (:prefix ("p" . "prompt compose")
-        :desc "prompt" "p" #'chatgpt-shell-prompt-compose
-        :desc "from kill-ring" "k" #'chatgpt-shell-prompt-appending-kill-ring
-        :desc "cancel" "Q" #'chatgpt-shell-prompt-compose-cancel
-        :desc "insert block" "i" #'chatgpt-shell-prompt-compose-insert-block-at-point
-        :desc "next history" "h" #'chatgpt-shell-prompt-compose-next-history
-        :desc "next item" "n" #'chatgpt-shell-prompt-compose-next-item
-        :desc "buffer" "b" #'chatgpt-shell-prompt-compose-other-buffer
-        :desc "previous history" "H" #'chatgpt-shell-prompt-compose-previous-history
-        :desc "previous item" "N" #'chatgpt-shell-prompt-compose-previous-item
-        :desc "quit" "q" #'chatgpt-shell-prompt-compose-quit-and-close-frame
-        :desc "refresh" "R" #'chatgpt-shell-prompt-compose-refresh
-        :desc "reply" "r" #'chatgpt-shell-prompt-compose-reply
-        :desc "search history" "s" #'chatgpt-shell-prompt-compose-search-history
-        :desc "send" "S" #'chatgpt-shell-prompt-compose-send-buffer
-        :desc "swap prompt" "P" #'chatgpt-shell-prompt-compose-swap-system-prompt
-        :desc "swap model" "m" #'chatgpt-shell-prompt-compose-swap-model-version)
-       :desc "insert" "i" #'chatgpt-shell-quick-insert
-       :desc "refactor code" "r" #'chatgpt-shell-refactor-code
-       :desc "transcript restore" "T" #'chatgpt-shell-restore-session-from-transcript
-       :desc "transcript save" "t" #'chatgpt-shell-save-session-transcript
-       :desc "history search" "h" #'chatgpt-shell-search-history
-       :desc "send and review" "S" #'chatgpt-shell-send-and-review-region
-       :desc "send" "s" #'chatgpt-shell-send-region
-       :desc "swap model" "m" #'chatgpt-shell-swap-model
-       :desc "swap prompt" "P" #'chatgpt-shell-swap-system-prompt
-       :desc "view" "v" #'chatgpt-shell-view-at-point
-       :desc "view code" "V" #'chatgpt-shell-view-block-at-point
-       :desc "git commit" "g" #'chatgpt-shell-write-git-commit))
+(use-package! corfu
+  :defer t
+  :custom
+  (setq corfu-cycle
+        corfu-preselect 'directory))
 
 (setq which-key-idle-delay 0.2)
+(setq which-key-idle-secondary-delay 0.01)
 
-(setq company-idle-delay 0.3
-      company-maximum-prefix-length 3)
-
-(after! spell-fu
-  (setq spell-fu-idle-delay 0.5))
+;; (after! spell-fu
+;;   (setq spell-fu-idle-delay 0.5))
 
 (use-package! dirvish
   :defer t
@@ -109,8 +54,6 @@
         dirvish-preview-dispatchers
         (cl-substitute 'pdf-preface 'pdf dirvish-preview-dispatchers)))
 
-(setq eros-eval-result-prefix "⟹ ") ; default =>
-
 (after! evil
   (setq evil-kill-on-visual-paste nil)) ; Don't put overwritten text in the kill ring
 
@@ -119,6 +62,7 @@
       "C-n" #'evil-next-line)
 
 (use-package! nov
+  :defer t
   :mode ("\\.epub\\'" . nov-mode)
   :config
   ;; (map! :map nov-mode-map
@@ -154,7 +98,8 @@
 (use-package nov-xwidget
   :after nov
   :config
-  (add-hook! 'nov-mode-hook #'nov-xwidget-inject-all-files))
+
+(add-hook! 'nov-mode-hook #'nov-xwidget-inject-all-files))
 
 (after! doom-modeline
   (defvar doom-modeline-nov-title-max-length 40)
@@ -191,9 +136,10 @@
 
   (add-to-list 'doom-modeline-mode-alist '(nov-mode . nov)))
 
+(after! flycheck
+  (setq flycheck-checker-error-threshold 10000))
+
 ;; Change the default shell to fish
-(setq shell-file-name (executable-find "bash"))
-(setq vterm-shell (executable-find "fish"))
 (setq explicit-shell-file-name (executable-find "fish"))
 
 ;; Use the system trash
@@ -204,12 +150,11 @@
 (setq undo-limit 80000000
       evil-want-fine-undo t
       auto-save-default t
-      password-cache-expiry 300
-      scroll-preserve-screen-position 'always
-      scroll-margin 4)
-;; debug-on-error t)
+      password-cache-expiry 300)
 
-(global-subword-mode t)
+;; (setq debug-on-error t)
+
+(setq global-subword-mode t)
 
 ;; Set vertico/consult commands
 (map! "C-s" #'+default/search-buffer)
@@ -228,26 +173,55 @@
 ;;       "DEL" #'which-key-undo)
 
 ;; Disable toolbar on mac
-(when (string= (system-name) "maccie")
-  (add-hook 'doom-after-init-hook (lambda () (tool-bar-mode 1) (tool-bar-mode 0))))
+;; (when (string= (system-name) "maccie")
+;;   (add-hook 'doom-after-init-hook (lambda () (tool-bar-mode 1) (tool-bar-mode 0))))
 
 ;; Enable nicer scrolling
-(pixel-scroll-precision-mode)
+;; (pixel-scroll-precision-mode)
+;; (setq pixel-scroll-precision-interpolate-mice t)
+(setq next-screen-context-lines 2
+      mouse-wheel-tilt-scroll t
+      mouse-wheel-flip-direction t)
 
-;; (use-package! languagetool
-;;   :defer t
-;;   :commands (languagetool-check
-;;              languagetool-clear-suggestions
-;;              languagetool-correct-at-point
-;;              languagetool-correct-buffer
-;;              languagetool-set-language
-;;              languagetool-server-mode
-;;              languagetool-server-start
-;;              languagetool-server-stop)
-;;   :config
-;;   (setq languagetool-java-arguments '("-Dfile.encoding=UTF-8" "-cp" "/opt/homebrew/Cellar/languagetool/*/libexec/*")
-;;         languagetool-console-command "org.languagetool.server.commandline.Main"
-;;         languagetool-server-command "org.languagetool.server.HTTPServer"))
+(use-package! ultra-scroll
+  :init
+  (ultra-scroll-mode 1)
+  (setq scroll-conservatively 10
+        scroll-margin 0))
+        ;; scroll-margin 2))  ; TODO when scroll-margin 2 is supported
+
+;; (setq epg-gpg-program "/opt/homebrew/bin/gpg")
+
+;; (use-package! gptel
+;;  :config
+;;  (setq! gptel-api-key "your key"))
+
+(after! gptel
+  ;; (gptel-make-gh-copilot "Copilot")
+  (setq gptel-backend (gptel-make-gh-copilot "Copilot")
+        gptel-model 'gpt-4.1)
+
+  (add-hook 'gptel-post-stream-hook 'gptel-auto-scroll)
+  (add-hook 'gptel-post-response-functions 'gptel-end-of-response))
+
+(use-package! languagetool
+  :defer t
+  :commands (languagetool-check
+             languagetool-clear-suggestions
+             languagetool-correct-at-point
+             languagetool-correct-buffer
+             languagetool-set-language
+             languagetool-server-mode
+             languagetool-server-start
+             languagetool-server-stop)
+  :config
+  (when (string= (system-name) "maccie")
+    (setq languagetool-java-arguments '("-Dfile.encoding=UTF-8")
+          languagetool-console-command "/opt/homebrew/Cellar/languagetool/6.6/libexec/languagetool-commandline.jar"
+          languagetool-server-command "/opt/homebrew/Cellar/languagetool/6.6/libexec/languagetool-server.jar"
+          (let ((credential (auth-source-user-and-password "languagetool")))
+            (setq languagetool-username (car credential)
+                  languagetool-api-key (cadr credential))))))
 
 (setq display-line-numbers-type 'relative)
 
@@ -256,17 +230,16 @@
 
 ;; (setq-default auto-fill-function 'do-auto-fill)
 
-(setq user-full-name "Dylan Morgan"
-      user-mail-address "dbmorgan98@protonmail.com")
+(setq user-full-name (password-store-get "emacs/personal_info/name")
+      user-mail-address (password-store-get "emacs/personal_info/email"))
 
 (after! auth-source
   (setq auth-source-cache-expiry 21600))  ; Change default to 6 hours to get me through most of a work day
 
-(setq projectile-sort-order 'recentf
-      projectile-auto-discover t)
-
-(setq projectile-enable-caching t)
-(setq projectile-file-exists-remote-cache-expire (* 10 60))
+(setq projectile-sort-order 'recently-active
+      projectile-auto-discover t
+      projectile-enable-caching t
+      projectile-file-exists-remote-cache-expire (* 10 60))
 
 (after! spell-fu
   (setq ispell-personal-dictionary "~/.config/emacs/.local/etc/ispell/.pws")
@@ -277,9 +250,9 @@
   :init
   (setenv "PKG_CONFIG_PATH" (concat "/opt/homebrew/opt/glib/lib/pkgconfig/:" (getenv "PKG_CONFIG_PATH")))
   (add-hook 'doom-init-ui-hook #'global-jinx-mode)
-  :config
+  :custom
   (setq jinx-languages "en_GB")
-  ;; Extra face(s) to ignore
+  :config
   (push 'org-inline-src-block
         (alist-get 'org-mode jinx-exclude-faces)))
 
@@ -295,37 +268,29 @@
 ;;     (global-set-key [remap evil-next-flyspell-error] #'jinx-next)
 ;;     (global-set-key [remap evil-prev-flyspell-error] #'jinx-previous))
 
-;; (unless (string= "enabled\n" (shell-command-to-string "systemctl --user is-enabled emacs.service"))
-;;   (warn! "Emacsclient service is not enabled."))
-
-(when (daemonp)
-  (add-hook! 'server-after-make-frame-hook
-    (unless (string-match-p "\\*draft\\|\\*stdin\\|emacs-everywhere" (buffer-name))
-      (switch-to-buffer +doom-dashboard-name))))
-
 (use-package! treemacs
   :defer t
   :init
   (lsp-treemacs-sync-mode 1)
   :config
   (progn
-    (setq treemacs-eldoc-display                   'detailed
-          treemacs-find-workspace-method           'find-for-file-or-pick-first
-          treemacs-indent-guide-style              'line
-          treemacs-missing-project-action          'remove
-          treemacs-move-forward-on-expand          t
-          treemacs-project-follow-cleanup          t
-          treemacs-project-follow-into-home        t
-          treemacs-recenter-after-file-follow      'always
-          treemacs-recenter-after-project-expand   'always
-          treemacs-recenter-after-project-jump     'always
-          treemacs-recenter-after-tag-follow       'always
-          treemacs-recenter-distance               0.2
-          treemacs-show-hidden-files               nil
+    (setq treemacs-eldoc-display 'detailed
+          treemacs-find-workspace-method 'find-for-file-or-pick-first
+          treemacs-indent-guide-style 'line
+          treemacs-missing-project-action 'remove
+          treemacs-move-forward-on-expand t
+          treemacs-project-follow-cleanup t
+          treemacs-project-follow-into-home t
+          treemacs-recenter-after-file-follow 'always
+          treemacs-recenter-after-project-expand 'always
+          treemacs-recenter-after-project-jump 'always
+          treemacs-recenter-after-tag-follow 'always
+          treemacs-recenter-distance 0.2
+          treemacs-show-hidden-files nil
           treemacs-select-when-already-in-treemacs 'next-or-back
-          treemacs-sorting                         'alphabetic-numeric-case-insensitive-asc
-          treemacs-tag-follow-delay                1.0
-          treemacs-width-increment                 5)
+          treemacs-sorting 'alphabetic-numeric-case-insensitive-asc
+          treemacs-tag-follow-delay 1.0
+          treemacs-width-increment 5)
 
     ;; The default width and height of the icons is 22 pixels. If you are
     ;; using a Hi-DPI display, uncomment this to double the icon size.
@@ -360,77 +325,44 @@
 
 (setq tramp-default-method "ssh")
 
-(after! tramp
-  (setenv "SHELL" "/bin/bash")
-  (setq tramp-shell-prompt-pattern "\\(?:^\\|\n\\|\x0d\\)[^]#$%>\n]*#?[]#$%>] *\\(\e\\[[0-9;]*[a-zA-Z] *\\)*")) ;; default + 
-
-;; (setq browse-url-browser-function 'xwidget-webkit-browse-url)
-(setq browse-url-browser-function 'browse-url-firefox)
-
-;; (setq moom-user-margin '(50 50 50 50)) ; {top, bottom, left, right}
-;; (moom-mode 1)
-
 (setq evil-vsplit-window-right t
       evil-split-window-below t)
 
 (defadvice! prompt-for-buffer (&rest _)
   :after '(evil-window-split evil-window-vsplit)
-  (counsel-buffer-or-recentf))
+  (consult-buffer))
 
 (setq window-combination-resize t)
 
-(map! :map evil-window-map
-      "SPC" #'rotate-layout
-      ;; Navigation
-      "<left>"     #'evil-window-left
-      "<down>"     #'evil-window-down
-      "<up>"       #'evil-window-up
-      "<right>"    #'evil-window-right
-      ;; Swapping windows
-      "C-<left>"       #'+evil/window-move-left
-      "C-<down>"       #'+evil/window-move-down
-      "C-<up>"         #'+evil/window-move-up
-      "C-<right>"      #'+evil/window-move-right)
-
-(map! :leader
-      :desc "Switch workspace buffer" "," #'+vertico/switch-workspace-buffer)
-
 (setq yas-triggers-in-field t)
 
-(sp-local-pair
- '(org-mode)
- "<<" ">>"
- :actions '(insert))
+(after! org
+  (sp-local-pair
+   '(org-mode)
+   "<<" ">>"
+   :actions
+   '(insert))
 
-(sp-local-pair
- '(org-mode)
- "$$" "$$"
- :actions '(insert))
+  (sp-local-pair
+   '(org-mode)
+   "$$" "$$"
+   :actions
+   '(insert)))
 
 (when (string= (system-name) "maccie")
-  (setq doom-font (font-spec :family "Fira Code" :size 15)
+  ;; (setq doom-font (font-spec :family "Fira Code" :size 15)
+  (setq doom-font (font-spec :family "JetBrainsMono NF" :size 15)
         doom-big-font (font-spec :family "Iosevka Aile" :size 20)
         doom-variable-pitch-font (font-spec :family "Iosevka Aile" :size 15)))
 
-(when (string= (system-name) "arch")
-  (setq doom-font (font-spec :family "Fira Code" :size 16)
+(when (string= (system-name) "archie")
+;;   ;; (setq doom-font (font-spec :family "Fira Code" :size 16)
+  (setq doom-font (font-spec :family "JetBrainsMonoNerdFont" :size 16)
         doom-big-font (font-spec :family "Iosevka Aile" :size 21)
         doom-variable-pitch-font (font-spec :family "Iosevka Aile" :size 16)))
 
 (after! text-mode
   (set-input-method 'TeX))
-
-(setq global-prettify-symbols-mode nil)
-
-;; (setq minimap-mode 0)
-
-;; (display-time-mode 1) ; Show the time
-(size-indication-mode 1) ; Info about what's going on
-(setq display-time-default-load-average nil) ; Hide the load average
-(setq all-the-icons-scale-factor 1.2) ; prevent the end of the modeline from being cut off
-
-(custom-set-faces!
-  '(doom-modeline-buffer-modified :foreground "orchid2"))
 
 (defun doom-modeline-conditional-buffer-encoding ()
   "We expect the encoding to be LF UTF-8, so only show the modeline when this is not the case"
@@ -588,21 +520,23 @@
   ;; (centaur-tabs-change-fonts "P22 Underground Book" 160))
 ;; (setq x-underline-at-descent-line t)
 
-(setq calendar-latitude 52.373199)
-(setq calendar-longitude -1.261740)
+;; (after! solar
+;;   (setq calendar-latitude (string-to-number (password-store-get "emacs/solar/latitude")))
+;;   (setq calendar-longitude (string-to-number (password-store-get "emacs/solar/longitude"))))
 
-(use-package! circadian
-  :ensure t
-  :config
-  (setq circadian-themes '((:sunrise . doom-dracula)
-                           (:sunset . doom-one)))
-  (circadian-setup))
+;; (use-package! circadian
+;;   :defer t
+;;   :config
+;;   (setq circadian-themes '((:sunrise . doom-dracula)
+;;                            (:sunset . doom-one))))
 
-;; (set-frame-parameter (selected-frame) 'alpha '(85 . 50))
-;; (add-to-list 'default-frame-alist '(alpha . (85 . 50)))
+;; (circadian-setup)
 
-(doom/set-frame-opacity 100)
-;; (doom/set-frame-opacity 95)
+;; (set-frame-parameter (selected-frame) 'alpha '(85 85))
+;; (add-to-list 'default-frame-alist '(alpha 85 85))
+
+;; (doom/set-frame-opacity 100)
+(doom/set-frame-opacity 95)
 ;; (doom/set-frame-opacity 85)
 
 (map! :leader
@@ -639,11 +573,11 @@
 (map! :leader
       :desc "Toggle Copilot Completion" "c G" #'copilot-mode)
 
-;; (use-package! copilot-chat
-;;   :defer t
-;;   :config
-;;   (setq copilot-chat-model "o1-preview"
-;;         copilot-chat-frontend 'org))
+(after! copilot-chat
+  (setq copilot-chat-frontend 'org
+        copilot-chat-follow t
+        copilot-chat-default-model "gemini-2.5-pro"
+        copilot-chat-list-show-path nil))
 
 (map! :map copilot-chat-map
       :n "M-p" #'copilot-chat-prompt-history-previous
@@ -654,13 +588,14 @@
        :desc "switch to buffer" "b" #'copilot-chat-switch-to-buffer
        :desc "delete buffer" "D" #'copilot-chat-del-current-buffer
        :desc "buffer list" "l" #'copilot-chat-list
-       :desc "display" "g" #'copilot-chat-display
+       :desc "transient" "g" #'copilot-chat-transient
+       :desc "display" "G" #'copilot-chat-display
        :desc "reset" "R" #'copilot-chat-reset
        :desc "explain" "e" #'copilot-chat-explain
        :desc "explain symbol at point" "s" #'copilot-chat-explain-symbol-at-line
        :desc "explain function at point" "f" #'copilot-chat-explain-defun
        :desc "review" "r" #'copilot-chat-review
-       :desc "review entire buffer" "B" #' copilot-chat-review-whole-buffer
+       :desc "review entire buffer" "B" #'copilot-chat-review-whole-buffer
        :desc "document" "d" #'copilot-chat-doc
        :desc "fix" "f" #'copilot-chat-fix
        :desc "optimise" "o" #'copilot-chat-optimize
@@ -671,14 +606,20 @@
        :desc "insert commit message" "c" #'copilot-chat-insert-commit-messages
        :desc "set model" "m" #'copilot-chat-set-model))
 
-(use-package! indent-bars
-  :hook ((prog-mode python-mode sh-mode f90-mode julia-mode yaml-mode) . indent-bars-mode)
-  :custom
-  (indent-bars-treesit-support t)
-  (indent-bars-color '(highlight :face-bg t :blend 0.2))
-  (indent-bars-pattern ".")
-  (indent-bars-pad-frac 0.1)
-  (indent-bars-highlight-current-depth '(:blend 0.55)))
+(map! :leader
+      (:desc "Copilot Chat" "C" #'copilot-chat-transient))
+
+(add-hook! 'prog-mode-hook #'indent-bars-mode)
+
+(after! indent-bars
+  (setq indent-bars-treesit-support t
+        indent-bars-color '(highlight :face-bg t :blend 0.2)
+        indent-bars-pattern "."
+        indent-bars-pad-frac 0.1
+        indent-bars-highlight-current-depth '(:blend 0.55)))
+
+  ;; (when (string= (system-name) "maccie")
+  ;;   (setq indent-bars-prefer-character t)))
 
 (map! :leader
       :desc "Indent bars" "t i" #'indent-bars-mode)
@@ -686,7 +627,7 @@
 (add-hook! 'prog-mode-hook #'rainbow-delimiters-mode)
 (add-hook! 'sh-mode-hook #'rainbow-delimiters-mode)
 
-(+global-word-wrap-mode +1)
+(+global-word-wrap-mode 1)
 ;; (add-hook! 'prog-mode-hook #'+word-wrap-mode)
 ;; (add-hook! 'sh-mode-hook #'+word-wrap-mode)
 
@@ -700,33 +641,28 @@
 
 (after! sh-mode
   (sh-set-shell "bash"))
-  ;; (when (equal (string-match-p (regexp-quote "*PKGBUILD")
-  ;;                              (buffer-file-name))
-  ;;              "PKGBUILD")
-  ;;   (sh-set-shell "bash")))
 
 (after! sh-mode
-  (setq sh-indentation
+  (setq sh-indentation 2
         sh-basic-offset 2))
 
-(after! f90
-  (setq f90-do-indent 2)
-  (setq f90-if-indent 2)
-  (setq f90-type-indent 2)
-  (setq f90-program-indent 2)
-  (setq f90-continuation-indent 4)
-  (setq f90-smart-end 'blink)
+(after! f90-mode
+  (setq f90-do-indent 2
+        f90-if-indent 2
+        f90-type-indent 2
+        f90-program-indent 2
+        f90-continuation-indent 4
+        f90-smart-end 'blink))
 
-  ;; TODO: copy rc params file from apollo to mac
-  (set-formatter! 'fprettify '("fprettify" "-i 2" "-l 88" "-w 4" "--whitespace-comma=true" "--whitespace-assignment=true" "--whitespace-decl=true" "--whitespace-relational=true" "--whitespace-plusminus=true" "--whitespace-multdiv=true" "--whitespace-print=true" "--whitespace-type=true" "--whitespace-intrinsics=true" "--strict-indent" "--enable-decl" "--enable-replacements" "--c-relations" "--case 1 1 1 1" "--strip-comments" "--disable-fypp") :modes '(f90-mode fortran-mode)))
+(after! fortran-mode
+  (setq fortran-continuation-string "&"
+        fortran-do-indent 2
+        fortran-if-indent 2
+        fortran-structure-indent 2))
 
-(after! fortran
-  (setq fortran-continuation-string "&")
-  (setq fortran-do-indent 2)
-  (setq fortran-if-indent 2)
-  (setq fortran-structure-indent 2)
-
-  (set-formatter! 'fprettify '("fprettify" "-i 2" "-l 88" "-w 4" "--whitespace-comma=true" "--whitespace-assignment=true" "--whitespace-decl=true" "--whitespace-relational=true" "--whitespace-plusminus=true" "--whitespace-multdiv=true" "--whitespace-print=true" "--whitespace-type=true" "--whitespace-intrinsics=true" "--strict-indent" "--enable-decl" "--enable-replacements" "--c-relations" "--case 1 1 1 1" "--strip-comments" "--disable-fypp") :modes '(f90-mode fortran-mode)))
+(set-formatter! 'fprettify
+  '("fprettify" "-i 2" "-l 88" "-w 4" "--whitespace-comma=true" "--whitespace-assignment=true" "--whitespace-decl=true" "--whitespace-relational=true" "--whitespace-plusminus=true" "--whitespace-multdiv=true" "--whitespace-print=true" "--whitespace-type=true" "--whitespace-intrinsics=true" "--strict-indent" "--enable-decl" "--enable-replacements" "--c-relations" "--case 1 1 1 1" "--strip-comments" "--disable-fypp")
+  :modes '(f90-mode fortran-mode))
 
 (setq auto-mode-alist
       (cons '("\\.F90$" . f90-mode) auto-mode-alist))
@@ -747,23 +683,22 @@
   :hook (f90-mode . lsp-deferred))
 
 (use-package! julia-mode
-  :defer t
   :init
-  (setenv "JULIA_NUM_THREADS" "6")
+  (setenv "JULIA_NUM_THREADS" "6,1")
   :interpreter
-  ("julia" . julia-mode))
+  ("julia" . julia-mode)
+  :config
+  (setq lsp-julia-package-dir nil))
 
-(after! julia
-  (add-hook! 'before-save-hook #'julia-snail/formatter-format-buffer))
+;; (after! julia-mode
+;;   (setq julia-snail-extensions '(repl-history formatter ob-julia)))
 
-(setq lsp-julia-package-dir nil)
-
-(after! lsp-julia
-  (setq lsp-julia-default-environment "~/.julia/environments/v1.11"))
-
-(add-hook! 'julia-mode-hook #'lsp-mode)
-
-(setq julia-snail-extensions '(repl-history formatter ob-julia))
+(use-package! julia-snail
+  :hook (julia-mode . julia-snail-mode)
+  ;; :custom
+  ;; (julia-snail-terminal-type :eat)
+  :config
+  (setq julia-snail-extensions '(repl-history formatter)))  ; ob-julia
 
 (map! :after julia-mode
       :map julia-mode-map
@@ -775,7 +710,19 @@
       :desc "Format region" "F" #'julia-snail/formatter-format-region
       :desc "Paste REPL history" "p" #'julia-snail/repl-history-yank
       :desc "Show REPL history" "b" #'julia-snail/repl-history-buffer
-      :desc "Search and paste REPL history" "s" #'julia-snail/repl-history-search-and-yank)
+      :desc "Search and paste REPL history" "s" 'julia-snail/repl-history-search-and-yank)
+
+(after! julia-mode
+  (add-hook! 'before-save-hook #'julia-snail/formatter-format-buffer))
+
+(after! julia-mode
+  (add-hook! 'julia-mode-hook #'lsp-mode)
+  (add-hook! 'julia-mode-hook #'julia-snail-mode))
+
+(setq lsp-julia-package-dir nil)
+
+(after! lsp-julia
+  (setq lsp-julia-default-environment "~/.julia/environments/emacs-julia"))
 
 (setq! bibtex-completion-bibliography '("~/Documents/warwick/thesus/references.bib"))
 
@@ -821,34 +768,67 @@
           (?$ ("\\leftarrow" "" ""))
           (?% ("\\rightarrow" "" "")))))
 
-(add-to-list 'company-backends 'company-math-symbols-unicode)
-
 (setq major-mode-remap-alist major-mode-remap-defaults)
 
-(setenv "PATH" (concat (getenv "PATH") ":/usr/bin/"))
-(setq exec-path (append exec-path '("/usr/bin/")))
+(after! (:or tex-mode LaTeX-mode TeX-mode latex-mode)
+  (setenv "PATH" (concat (getenv "PATH") ":/usr/bin/"))
+  (setq exec-path (append exec-path '("/usr/bin/")))
+  (setq tex-command "latexmk"
+        tex-run-command "latexmk"
+        latex-run-command "latexmk"
+        TeX-master 'dwim
+        TeX-engine 'lualatex
+        TeX-command "latexmk"
+        TeX-command-default "LaTeXMk"
+        TeX-command-extra-options "-bibtex -lualatex -ps-"
+        TeX-show-compilation nil
+        TeX-electric-sub-and-superscript t
+        TeX-electric-math (cons "\\(" "")
+        TeX-electric-escape t
+        TeX-view-program-selection '((output-pdf "PDF Tools")
+                                     ((output-dvi has-no-display-manager) "dvi2tty")
+                                     ((output-dvi style-pstricks) "dvips and gv")
+                                     (output-dvi "xdvi")
+                                     (output-html "xdg-open"))
 
-(setq TeX-master nil
-      TeX-show-compilation nil)
+        LaTeX-command "latexmk"
+        ;; LaTeX-default-format "  "
+        LaTeX-default-environment "figure"
+        LaTeX-electric-left-right-brace t))
+        ;; +latex-viewers '(pdf-tools) ; skim evince sumatrapdf zathura okular))
 
-(setq TeX-command-default "LaTeXMk"
-      TeX-command "latexmk"
-      TeX-command-extra-options "-bibtex -lualatex -ps-"
-      +latex-viewers '(pdf-tools skim evince sumatrapdf zathura okular))
-
-;; (use-package! lsp-ltex
-;;   ;; :hook (text-mode . (lambda ()
-;;   ;;                      require 'lsp-ltex
-;;   ;;                      (lsp)))
-;;   :hook (latex-mode . lsp-deferred)
+;; (use-package! lsp-ltex-plus
+;;   :hook (text-mode . (lambda ()
+;;                        (require 'lsp-ltex-plus)
+;;                        (lsp-deferred)))  ; or lsp
 ;;   :init
-;;   (setq lsp-ltex-version (gethash "ltex-ls" (json-parse-string (shell-command-to-string "ltex-ls -V")))
-;;         lsp-ltex-server-store-path nil
-;;         lsp-ltex-language "en-GB"
-;;         lsp-ltex-mother-tongue "en-GB"
-;;         lsp-ltex-completion-enabled t)
+;;   (setq lsp-ltex-plus-version "18.5.1")  ; make sure you have set this, see below
 ;;   :config
-;;   (set-lsp-priority! 'ltex-ls 2))
+;;   (setq lsp-ltex-plus-mother-tongue "en-GB"
+;;         lsp-ltex-plus-server-store-path (executable-find "ltex-ls-plus")))
+;;         
+;; (use-package! lsp-ltex
+;;   :hook (text-mode . (lambda ()
+;;                        (require 'lsp-ltex)
+;;                        (lsp-deferred)))  ; or lsp
+;;   :init
+;;   (setq lsp-ltex-version "16.0.0"))  ; make sure you have set this, see below
+  ;; (setq lsp-ltex-version (gethash "ltex-ls" (json-parse-string (shell-command-to-string "ltex-ls-plus -V"))))  ; make sure you have set this, see below
+  ;; :config
+  ;; (setq lsp-ltex-mother-tongue "en-GB"
+  ;;       lsp-ltex-server-store-path (executable-find "ltex-ls")))
+
+(after! lsp-mode
+  (setq lsp-ltex-plus-mother-tongue "en-GB"
+        lsp-ltex-plus-language "en-GB"
+        lsp-ltex-plus-disabled-rules '(:en-GB ["OXFORD_SPELLING_Z_NOT_S"])
+        lsp-ltex-plus-completion-enabled t
+        lsp-ltex-plus-languagetool-http-server-uri ""
+        lsp-ltex-plus-additional-rules-enable-picky-rules t))
+
+(let ((credential (auth-source-user-and-password "languagetool")))
+  (setq lsp-ltex-plus-languagetool-org-username (car credential)
+        lsp-ltex-plus-languagetool-org-api-key (cadr credential)))
 
 (after! LaTeX-mode
   ;; When on mac
@@ -857,23 +837,24 @@
     (setq lsp-latex-texlab-executable "/opt/homebrew/bin/texlab"))
 
   ;; When on arch
-  (when (string= (system-name) "arch")
-    (add-to-list 'load-path "/usr/bin/texlab")
-    (setq lsp-latex-texlab-executable "/usr/bin/texlab"))
+  ;; (when (string= (system-name) "archie")
+  ;;   (add-to-list 'load-path "/usr/bin/texlab")
+  ;;   (setq lsp-latex-texlab-executable "/usr/bin/texlab"))
 
   (with-eval-after-load "tex-mode"
     (add-hook 'tex-mode-hook 'lsp)
-    (add-hook 'latex-mode-hook 'lsp))
+    (add-hook 'latex-mode-hook 'lsp)
+    (add-hook 'LaTeX-mode-hook 'lsp))
   (with-eval-after-load "bibtex"
     (add-hook 'bibtex-mode-hook 'lsp)))
 
-(map! :after LaTeX-mode
+(map! :after latex
       :map LaTeX-mode-map
       :localleader
       :desc "" "P" nil
       :desc "Unpreview" "P" #'preview-clearout-buffer)
 
-(after! LaTeX-mode
+(after! latex
   (setq reftex-default-bibliography "~/Documents/warwick/thesus/references.bib"))
 
 (map! :map reftex-mode-map
@@ -888,46 +869,6 @@
   (setq zotra-backend 'zotra-server)
   (setq zotra-local-server-directory "~/Applications/zotra-server/"))
 
-(require 'zotra)
-(setq zotra-backend 'zotra-server)
-(setq zotra-local-server-directory "~/Applications/zotra-server/")
-
-(after! dap-mode
-  (setq dap-python-debugger 'debugpy))
-
-(map! :after dap-mode
-      :map dap-mode-map
-      :leader
-      :prefix ("d" . "dap")
-
-      ;; basics
-      :desc "dap next"          "n" #'dap-next
-      :desc "dap step in"       "i" #'dap-step-in
-      :desc "dap step out"      "o" #'dap-step-out
-      :desc "dap continue"      "c" #'dap-continue
-      :desc "dap hydra"         "h" #'dap-hydra
-      :desc "dap debug restart" "r" #'dap-debug-restart
-      :desc "dap debug"         "s" #'dap-debug
-
-      ;; debug
-      :prefix ("dd" . "Debug")
-      :desc "dap debug recent"  "r" #'dap-debug-recent
-      :desc "dap debug last"    "l" #'dap-debug-last
-
-      ;; eval
-      :prefix ("de" . "Eval")
-      :desc "eval"                "e" #'dap-eval
-      :desc "eval region"         "r" #'dap-eval-region
-      :desc "eval thing at point" "s" #'dap-eval-thing-at-point
-      :desc "add expression"      "a" #'dap-ui-expressions-add
-      :desc "remove expression"   "d" #'dap-ui-expressions-remove
-
-      :prefix ("db" . "Breakpoint")
-      :desc "dap breakpoint toggle"      "b" #'dap-breakpoint-toggle
-      :desc "dap breakpoint condition"   "c" #'dap-breakpoint-condition
-      :desc "dap breakpoint hit count"   "h" #'dap-breakpoint-hit-condition
-      :desc "dap breakpoint log message" "l" #'dap-breakpoint-log-message)
-
 (after! lsp-mode
   (setq lsp-enable-symbol-highlighting t
         lsp-lens-enable t
@@ -936,43 +877,42 @@
         lsp-modeline-diagnostics-enable t
         lsp-diagnostics-provider :auto
         lsp-eldoc-enable-hover t
-        ;; lsp-completion-provider :none
+        lsp-completion-provider :capf
         lsp-completion-show-detail t
         lsp-completion-show-kind t
-        ;; lsp-signature-auto-activate t
         lsp-signature-render-documentation t
         lsp-idle-delay 0.75))
 
-(after! lsp-mode
-  (setq lsp-ui-sideline-enable t
-        lsp-ui-sideline-delay 0.5
-        lsp-ui-sideline-show-symbol t
-        lsp-ui-sideline-show-diagnostics t
-        lsp-ui-sideline-show-hover t
-        lsp-ui-sideline-show-code-actions t
-        lsp-ui-sideline-update-mode 'point
-        lsp-ui-peek-enable t
-        lsp-ui-peek-show-directory t
-        lsp-ui-doc-enable t
-        ;; lsp-ui-doc-frame-mode t ; This breaks 'q' for some reason
-        lsp-ui-doc-delay 1
-        lsp-ui-doc-show-with-cursor nil
-        lsp-ui-doc-show-with-mouse t
-        ;; lsp-ui-doc-header t
-        lsp-ui-doc-use-childframe t
-        lsp-ui-doc-position 'top
-        lsp-ui-doc-max-height 40
-        lsp-ui-doc-max-width 100
-        lsp-ui-doc-use-webkit nil
-        lsp-ui-imenu-enable t
-        lsp-ui-imenu-kind-position 'left
-        lsp-ui-imenu-buffer-position 'right
-        lsp-ui-imenu-window-width 40
-        lsp-ui-imenu-auto-refresh t
-        lsp-ui-imenu-auto-refresh-delay 1.0)
+(after! lsp-ui
+    (setq lsp-ui-doc-enable t
+          lsp-ui-doc-show-with-cursor t
+          lsp-ui-doc-show-with-mouse t
+          lsp-headerline-breadcrumb-enable t
+          lsp-ui-sideline-enable t
+          lsp-ui-sideline-show-code-actions t
+          lsp-ui-sideline-show-hover t
+          lsp-ui-sideline-delay 0.5
+          lsp-ui-sideline-show-symbol t
+          lsp-ui-sideline-show-diagnostics t
+          lsp-ui-sideline-update-mode 'line
+          lsp-ui-peek-enable t
+          lsp-ui-peek-show-directory t
+          lsp-ui-doc-delay 1
+          lsp-ui-doc-header t
+          lsp-ui-doc-use-childframe t
+          lsp-ui-doc-position 'top
+          lsp-ui-doc-max-height 20
+          lsp-ui-doc-max-width 80
+          lsp-ui-doc-use-webkit nil
+          lsp-ui-imenu-enable t
+          lsp-ui-imenu-kind-position 'left
+          lsp-ui-imenu-buffer-position 'right
+          lsp-ui-imenu-window-width 40
+          lsp-ui-imenu-auto-refresh t
+          lsp-ui-imenu-auto-refresh-delay 1.0))
 
-  (map! :map lsp-ui-mode-map "C-," #'lsp-ui-doc-toggle)
-  (map! :map lsp-ui-mode-map "C-;" #'lsp-ui-doc-focus-frame))
+(map! :map lsp-ui-mode-map "C-," #'lsp-ui-doc-toggle)
+(map! :map lsp-ui-mode-map "C-;" #'lsp-ui-doc-focus-frame)
 
 ;; (map! :after lsp-mode
 ;;       :map lsp-mode-map
@@ -983,37 +923,6 @@
 ;;       "i" #'lsp-ui-imenu
 ;;       "I" #'lsp-ui-imenu--refresh)
 
-(cl-defmacro lsp-org-babel-enable (lang)
-  "Support LANG in org source code block."
-  (setq centaur-lsp 'lsp-mode)
-  (cl-check-type lang string)
-  (let* ((edit-pre (intern (format "org-babel-edit-prep:%s" lang)))
-         (intern-pre (intern (format "lsp--%s" (symbol-name edit-pre)))))
-    `(progn
-       (defun ,intern-pre (info)
-         (let ((file-name (->> info caddr (alist-get :file))))
-           (unless file-name
-             (setq file-name (make-temp-file "babel-lsp-")))
-           (setq buffer-file-name file-name)
-           (lsp-deferred)))
-       (put ',intern-pre 'function-documentation
-            (format "Enable lsp-mode in the buffer of org source block (%s)."
-                    (upcase ,lang)))
-       (if (fboundp ',edit-pre)
-           (advice-add ',edit-pre :after ',intern-pre)
-         (progn
-           (defun ,edit-pre (info)
-             (,intern-pre info))
-           (put ',edit-pre 'function-documentation
-                (format "Prepare local buffer environment for org source block (%s)."
-                        (upcase ,lang))))))))
-
-(defvar org-babel-lang-list
-  '("python" "bash" "julia"))
-
-(dolist (lang org-babel-lang-list)
-  (eval `(lsp-org-babel-enable ,lang)))
-
 (use-package! grip-mode
   :defer t
   :config
@@ -1023,22 +932,24 @@
 
   (setq grip-sleep-time 2
         grip-preview-use-webkit t
-        grip-url-browser nil)
+        grip-url-browser nil))
 
-  (when (string= (system-name) "arch")
-    (setq grip-binary-path "/usr/bin/grip"))
-  (when (string= (system-name) "maccie")
-    (setq grip-binary-path "/opt/homebrew/bin/grip")))
+  ;; (when (string= (system-name) "archie")
+  ;;   (setq grip-binary-path "/home/dylanmorgan/.local/bin/grip"))
+  ;; (when (string= (system-name) "maccie")
+  ;;   (setq grip-binary-path "/opt/homebrew/bin/grip")))
 
-(add-hook! (gfm-mode markdown-mode) #'visual-line-mode #'turn-off-auto-fill)
+(after! markdown-mode
+  (add-hook! (gfm-mode markdown-mode) #'visual-line-mode #'turn-off-auto-fill))
 
-(custom-set-faces!
-  '(markdown-header-face-1 :height 1.5 :weight extra-bold :inherit markdown-header-face)
-  '(markdown-header-face-2 :height 1.25 :weight bold       :inherit markdown-header-face)
-  '(markdown-header-face-3 :height 1.15 :weight bold       :inherit markdown-header-face)
-  '(markdown-header-face-4 :height 1.00 :weight bold       :inherit markdown-header-face)
-  '(markdown-header-face-5 :height 0.85 :weight bold       :inherit markdown-header-face)
-  '(markdown-header-face-6 :height 0.75 :weight extra-bold :inherit markdown-header-face))
+(after! markdown-mode
+  (custom-set-faces!
+    '(markdown-header-face-1 :height 1.5 :weight extra-bold :inherit markdown-header-face)
+    '(markdown-header-face-2 :height 1.25 :weight bold       :inherit markdown-header-face)
+    '(markdown-header-face-3 :height 1.15 :weight bold       :inherit markdown-header-face)
+    '(markdown-header-face-4 :height 1.00 :weight bold       :inherit markdown-header-face)
+    '(markdown-header-face-5 :height 0.85 :weight bold       :inherit markdown-header-face)
+    '(markdown-header-face-6 :height 0.75 :weight extra-bold :inherit markdown-header-face)))
 
 ;; (use-package! obsidian
 ;;   :ensure t
@@ -1077,88 +988,20 @@
 ;;         ;; Create a daily note
 ;;         :desc "daily note" #'obsidian-daily-note)
 
-(after! python-mode
-  (setq prettify-symbols-mode nil))
+(set-formatter! 'ruff '("ruff" "format" "-") :modes '(python-mode))
 
-;; (use-package! lsp-mode
-;;   :hook (python-mode . lsp-deferred)
-;;   ;; :commands lsp-deferred
-;;   :custom
-;;   (lsp-ruff-lsp-ruff-path ["usr/bin/ruff server"])
-;;   (lsp-ruff-lsp-ruff-args ["–-config /home/dylanmorgan/.config/ruff/ruff.toml" "--preview"])
-;;   ;; (lsp-ruff-lsp-python-path "python")
-;;   (lsp-ruff-lsp-advertize-fix-all t)
-;;   (lsp-ruff-lsp-advertize-organize-imports t)
-;;   (lsp-ruff-lsp-log-level "info")
-;;   (lsp-ruff-lsp-show-notifications "onError"))
+(after! lsp-ruff
+  (setq lsp-ruff-show-notifications "onError"))
 
-;; TODO when ruff formatting leaves alpha dev
-;; (after! python
-  ;; (setf (alist-get 'ruff apheleia-formatters) '("ruff format --config ~/.config/ruff/ruff.toml --target-version py39 -q"
-  ;;                                               (eval (when buffer-file-name
-  ;;                                                       (concat "--stdin-filename=" buffer-file-name)))
-  ;;                                               "-"))
-  ;; (setf (alist-get 'python-mode apheleia-mode-alist) '(ruff))
-  ;; (add-hook! 'before-save-hook #'format-with-lsp t)
-  ;; (add-hook! 'before-save-hook #'lsp-organize-imports))
-
-;; (after! flycheck
-;;   ;; (require 'flycheck)
-
-;;   (flycheck-define-checker python-ruff
-;;     "A Python syntax and style checker using the ruff utility.
-;;   To override the path to the ruff executable, set
-;;   `flycheck-python-ruff-executable'.
-;;   See URL `http://pypi.python.org/pypi/ruff'."
-
-;;     :command ("ruff format --config /home/dylanmorgan/.config/ruff/ruff.toml --target-version py312 -q"
-;;               (eval (when buffer-file-name
-;;                       (concat "--stdin-filename=" buffer-file-name)))
-;;               "-")
-;;     :standard-input t
-;;     :error-filter (lambda (errors)
-;;                     (let ((errors (flycheck-sanitize-errors errors)))
-;;                       (seq-map #'flycheck-flake8-fix-error-level errors)))
-;;     :error-patterns
-;;     ((warning line-start
-;;               (file-name) ":" line ":" (optional column ":") " "
-;;               (id (one-or-more (any alpha)) (one-or-more digit)) " "
-;;               (message (one-or-more not-newline))
-;;               line-end))
-;;     :modes python-mode)
-
-;;   (add-to-list 'flycheck-checkers 'python-ruff)
-;;   (provide 'flycheck-ruff))
-
-;; (lsp-register-client
-;;     (make-lsp-client
-;;         :new-connection (lsp-tramp-connection "ruff-lsp")
-;;         :activation-fn (lsp-activate-on "python")
-;;         :major-modes '(python-mode)
-;;         :remote? t
-;;         :add-on? t
-;;         :server-id 'ruff-lsp))
-
-(after! lsp-mode
+(after! lsp-pyright
   (setq lsp-pyright-disable-language-services nil
         lsp-pyright-disable-organize-imports nil
         lsp-pyright-auto-import-completions t
         lsp-pyright-auto-search-paths t
         lsp-pyright-diagnostic-mode "openFilesOnly"
         lsp-pyright-log-level "info"
-        lsp-pyright-typechecking-mode "basic"
-        lsp-pyright-use-library-code-for-types t
+        lsp-pyright-type-checking-mode "basic"
         lsp-completion-enable t))
-
-;; (lsp-register-client
-;;     (make-lsp-client
-;;         :new-connection (lsp-tramp-connection "pyright")
-;;         :activation-fn (lsp-activate-on "python")
-;;         :major-modes '(python-mode)
-;;         :remote? t
-;;         :add-on? t
-;;         :server-id 'pyright)
-;;         :tramp-remote-path )
 
 (use-package! numpydoc
   :after python
@@ -1168,18 +1011,6 @@
         :desc "numpydoc" "n" #'numpydoc-generate)
   ;; (setq numpydoc-template-long "")
   (setq numpydoc-insertion-style 'yas))
-
-(use-package! poetry
-  :after python
-  :hook (python-mode . (lambda ()
-                         (interactive)
-                         (if (file-remote-p default-directory)
-                             (setq package-load-list '(all
-                                                       (poetry nil))))))
-  :config
-  (map! :map python-mode-map
-        :localleader
-        :desc "poetry" "p" #'poetry))
 
 (add-hook! 'python-mode #'uv-mode-auto-activate-hook)
 
@@ -1243,6 +1074,7 @@
   (setq org-src-fontify-natively t
         org-src-tab-acts-natively t
         org-src-window-setup 'other-window)
+
   (set-popup-rule! "^\\*Org Src" :ignore t))
 
 (after! org
@@ -1291,22 +1123,6 @@
       :desc "Remove all results" "R" #'+org/remove-result-blocks
       :desc "Execute subtree" "s" #'org-babel-execute-subtree
       :desc "Tangle SRC blocks" "t" #'org-babel-tangle)
-
-(evil-define-command +evil-buffer-org-new (_count file)
-  "Creates a new ORG buffer replacing the current window, optionally editing a certain FILE"
-  :repeat nil
-  (interactive "P<f>")
-  (if file
-      (evil-edit file)
-    (let ((buffer (generate-new-buffer "*new org*")))
-      (set-window-buffer nil buffer)
-      (with-current-buffer buffer
-        (org-mode)
-        (setq-local doom-real-buffer-p t)))))
-
-(map! :leader
-      :prefix "b"
-      :desc "New empty Org buffer" "o" #'+evil-buffer-org-new)
 
 (after! org
   (setq org-capture-templates
@@ -1369,13 +1185,6 @@
 (after! oc
   (setq org-cite-export-processors '((t csl))))
 
-(use-package! company-org-block
-  :custom
-  (company-org-block-edit-style 'auto) ;; 'auto, 'prompt, or 'inline
-  :hook ((org-mode . (lambda ()
-                       (setq-local company-backends '(company-org-block))
-                       (company-mode +1)))))
-
 (map! :map org-mode-map
       :after org
       :localleader
@@ -1389,66 +1198,13 @@
 (use-package! org-pandoc-import
   :after org)
 
-(defun org-literate-config ()
-  (interactive)
-  (setq title (read-string "Title: "))
-  (setq filename (read-string "Original file name: "))
-  (insert "#+TITLE: " title " \n"
-          "#+AUTHOR: Dylan Morgan\n"
-          "#+EMAIL: dbmorgan98@gmail.com\n"
-          "#+PROPERTY: header-args :tangle " filename "\n"
-          "#+STARTUP: content\n\n"
-          "* Table of Contents :toc:\n\n"))
-
-(defun org-header-notes ()
-  (interactive)
-  (setq title (read-string "Title: "))
-  (insert "#+TITLE: " title " \n"
-          "#+AUTHOR: Dylan Morgan\n"
-          "#+EMAIL: dbmorgan98@gmail.com\n"
-          "#+STARTUP: content\n\n"
-          "* Table of Contents :toc:\n\n"))
-
-(defun org-header-notes-custom-property ()
-  (interactive)
-  (setq title (read-string "Title: "))
-  (setq properties (read-string "Properties: "))
-  (insert "#+TITLE: " title " \n"
-          "#+AUTHOR: Dylan Morgan\n"
-          "#+EMAIL: dbmorgan98@gmail.com\n"
-          "#+PROPERTY: " properties "\n"
-          "#+STARTUP: content\n\n"
-          "* Table of Contents :toc:\n\n"))
-
-(defun org-header-with-readme ()
-  (interactive)
-  (setq title (read-string "Title: "))
-  (insert "#+TITLE: " title " \n"
-          "#+AUTHOR: Dylan Morgan\n"
-          "#+EMAIL: dbmorgan98@gmail.com\n"
-          "#+STARTUP: content\n"
-          "#+EXPORT_FILE_NAME: ./README.org\n\n"
-          "* Table of Contents :toc:\n\n"))
-
-(map! :map org-mode-map
-      :after org
-      :localleader
-      :prefix ("k" . "org header")
-      :desc "literate config"
-      "l" 'org-literate-config
-      :desc "note taking"
-      "n" 'org-header-notes
-      :desc "notes custom property"
-      "p" 'org-header-notes-custom-property
-      :desc "header with readme"
-      "r" 'org-header-with-readme)
-
-(setq org-directory "~/Documents/org/"
-      org-id-locations-file "~/.config/emacs/.local/cache/.org-id-locations"
-      org-use-property-inheritance t
-      org-list-allow-alphabetical t
-      org-export-in-background t
-      org-fold-catch-invisible-edits 'smart)
+(after! org
+  (setq org-directory "~/Documents/org/"
+        org-id-locations-file "~/.config/emacs/.local/cache/.org-id-locations"
+        org-use-property-inheritance t
+        org-list-allow-alphabetical t
+        org-export-in-background t
+        org-fold-catch-invisible-edits 'smart))
 
 (use-package! org-special-block-extras
   :hook (org-mode . org-special-block-extras-mode))
@@ -1465,6 +1221,38 @@
 
   (setq org-list-use-circular-motion t
         org-list-allow-alphabetical t))
+
+(after! org
+  ;; (dolist (face '((org-level-1 . 1.2)
+  ;;                 (org-level-2 . 1.1)
+  ;;                 (org-level-3 . 1.05)
+  ;;                 (org-level-4 . 1.0)
+  ;;                 (org-level-5 . 1.1)
+  ;;                 (org-level-6 . 1.1)
+  ;;                 (org-level-7 . 1.1)
+  ;;                 (org-level-8 . 1.1)))
+  ;;   (set-face-attribute (car face) nil :font "Iosevka Aile" :weight 'bold :height (cdr face)))
+
+  ;; ;; Make the document title a bit bigger
+  ;; (set-face-attribute 'org-document-title nil :font "Iosevka Aile" :weight 'bold :height 1.8)
+
+  ;; (require 'org-indent)
+  ;; (set-face-attribute 'org-indent nil :inherit '(org-hide fixed-pitch))
+
+  ;; (set-face-attribute 'org-block nil            :foreground nil :inherit
+  ;;                     'fixed-pitch :height 0.85)
+  ;; (set-face-attribute 'org-code nil             :inherit '(shadow fixed-pitch) :height 0.85)
+  ;; (set-face-attribute 'org-indent nil           :inherit '(org-hide fixed-pitch) :height 0.85)
+  ;; (set-face-attribute 'org-verbatim nil         :inherit '(shadow fixed-pitch) :height 0.85)
+  ;; (set-face-attribute 'org-special-keyword nil  :inherit '(font-lock-comment-face fixed-pitch))
+  ;; (set-face-attribute 'org-meta-line nil        :inherit '(font-lock-comment-face fixed-pitch))
+  ;; (set-face-attribute 'org-checkbox nil         :inherit 'fixed-pitch)
+
+  ;; (add-hook! 'org-mode-hook #'variable-pitch-mode)
+
+  (setq org-ellipsis " ... "))
+        ;; org-edit-src-content-indentation 0
+        ;; org-tags-column -80))
 
 (after! org
   (setq org-startup-with-inline-images t
@@ -1507,31 +1295,8 @@
       :desc "Restart execute buffer" "R" #'jupyter-org-restart-kernel-execute-buffer
       :desc "Split block" "s" #'jupyter-org-split-src-block)
 
-(add-to-list 'warning-suppress-types '(org-element org-element-parser))
-
-(use-package! org-journal
-  :defer t
-  :config
-  (setq org-journal-carryover-delete-empty-journal "ask"
-        org-journal-enable-agenda-integration t
-        org-journal-file-format "%Y%m"
-        org-journal-file-type 'monthly
-        org-journal-follow-mode t))
-  ;; (setq org-capture-templates '(("j" "Journal entry" plain))))
-
-;; (defun org-insert-newline-heading ()
-;;   ('newline)
-;;   ('org-insert-heading))
-
-;; (map! :map org-mode-map
-;;       :after org
-;;       :desc "Insert Heading"
-;;       "M-<return>" 'org-insert-newline-heading)
-
-(map! :map org-mode-map
-      :after org
-      :desc "Insert Heading"
-      "M-<return>" 'org-insert-heading)
+(after! org
+  (add-to-list 'warning-suppress-types '(org-element org-element-parser)))
 
 (after! org
   (setq org-startup-with-latex-preview t)
@@ -1545,47 +1310,55 @@
 
 (after! org
   (setq org-preview-latex-default-process 'dvisvgm)
-  (setf (alist-get 'dvipng org-preview-latex-process-alist)
-        '(:programs ("lualatex" "dvipng")
-          :description "dvi > png"
-          :message "You need to install the programs: lualatex and dvipng."
-          :image-input-type "dvi"
-          :image-output-type "png"
-          :image-size-adjust (1.0 . 1.0)
-          :latex-compiler ("lualatex --interaction nonstopmode --output-format=dvi --output-directory %o %f")
-          :image-converter ("dvipng -D %D -T tight -o %O %f")
-          :transparent-image-converter ("dvipng -D %D -T tight -bg Transparent -o %O %f"))
 
-        (alist-get 'dvisvgm org-preview-latex-process-alist)
-        '(:programs ("lualatex" "dvisvgm")
-          :description "dvi > svg"
-          :message "you need to install the programs: lualatex and dvisvgm."
-          :image-input-type "dvi"
-          :image-output-type "svg"
-          :image-size-adjust (2.0 . 2.0)
-          :latex-compiler ("lualatex --interaction nonstopmode --output-format=dvi -output-directory %o %f")
-          :image-converter ("dvisvgm %f --no-fonts --exact-bbox --scale=%S --output=%O"))
-          ;; :transparent-image-converter ("dvisvgm %f --no-fonts --exact-bbox --scale=%S --output=%O"))
+  ;; Set the image size depending on which computer I'm on
+  (let ((image-size-adjust
+         (if (string= (system-name) "maccie")
+             '(2.0 . 2.0)
+           '(1.6 . 1.6)))) ; fallback value
 
-        (alist-get 'imagemagick org-preview-latex-process-alist)
-        '(:programs ("lualatex" "convert")
-          :description "pdf > png"
-          :message "you need to install the programs: latex and imagemagick."
-          :image-input-type "pdf"
-          :image-output-type "png"
-          :image-size-adjust (1.0 . 1.0)
-          :latex-compiler ("lualatex --interaction nonstopmode -output-directory %o %f")
-          :image-converter ("magick convert -density %D -trim -antialias %f -quality 100 %O")))
+    (setf (alist-get 'dvipng org-preview-latex-process-alist)
+          `(:programs ("lualatex" "dvipng")
+            :description "dvi > png"
+            :message "You need to install the programs: lualatex and dvipng."
+            :image-input-type "dvi"
+            :image-output-type "png"
+            :image-size-adjust (1.0 . 1.0)
+            :latex-compiler ("lualatex --interaction nonstopmode --output-format=dvi --output-directory %o %f")
+            :image-converter ("dvipng -D %D -T tight -o %O %f")
+            :transparent-image-converter ("dvipng -D %D -T tight -bg Transparent -o %O %f"))
 
-  (plist-put org-format-latex-options :scale 1.5)
-  (plist-put org-format-latex-options :html-scale 1.0)
-  ;; (plist-put org-format-latex-options :foreground "white")
-  (plist-put org-format-latex-options :background "Transparent")
-  (plist-put org-format-latex-options :matchers '("begin" "$1" "$" "$$" "\\(" "\\[")))
+          (alist-get 'dvisvgm org-preview-latex-process-alist)
+          `(:programs ("lualatex" "dvisvgm")
+            :description "dvi > svg"
+            :message "you need to install the programs: lualatex and dvisvgm."
+            :image-input-type "dvi"
+            :image-output-type "svg"
+            :image-size-adjust ,image-size-adjust
+            :latex-compiler ("lualatex --interaction nonstopmode --output-format=dvi --output-directory %o %f")
+            :image-converter ("dvisvgm %f --no-fonts --exact-bbox --scale=%S --output=%O"))
+
+          (alist-get 'imagemagick org-preview-latex-process-alist)
+          `(:programs ("lualatex" "convert")
+            :description "pdf > png"
+            :message "you need to install the programs: latex and imagemagick."
+            :image-input-type "pdf"
+            :image-output-type "png"
+            :image-size-adjust (1.0 . 1.0)
+            :latex-compiler ("lualatex --interaction nonstopmode --output-directory %o %f")
+            :image-converter ("magick convert -density %D -trim -antialias %f -quality 100 %O")))
+
+    (plist-put org-format-latex-options :scale 1.5)
+    (plist-put org-format-latex-options :html-scale 1.0)
+    ;; (plist-put org-format-latex-options :foreground "white")
+    (plist-put org-format-latex-options :background "Transparent")
+    ;; (plist-put org-format-latex-options :matchers '("begin" "$1" "$" "$$" "\\(" "\\)"))))
+    (plist-put org-format-latex-options :matchers '("begin" "$1" "$" "$$"))))
+
 ;; '(org-format-latex-options
 ;;   (quote
 ;;    (:foreground default :background default :scale 2 :html-foreground "Black" :html-background "Transparent" :html-scale 1 :matchers
-;;     ("begin" "$1" "$" "$$" "\\(" "\\[")))))
+;;     ("begin" "$1" "$" "$$" "\\(" "\\)")))))
 
 ;; (defun update-org-latex-fragments ()
 ;;   (org-latex-preview '(64))
@@ -1629,257 +1402,43 @@
   (setq org-highlight-latex-and-related '(native script entities))
   (add-to-list 'org-src-block-faces '("latex" (:inherit default :extend t))))
 
-;; (setq org-format-latex-header "\\documentclass{article}
-;; \\usepackage[usenames]{xcolor}
-
-;; \\usepackage[T1]{fontenc}
-
-;; \\usepackage{booktabs}
-
-;; \\pagestyle{empty}             % do not remove
-;; % The settings below are copied from fullpage.sty
-;; \\setlength{\\textwidth}{\\paperwidth}
-;; \\addtolength{\\textwidth}{-3cm}
-;; \\setlength{\\oddsidemargin}{1.5cm}
-;; \\addtolength{\\oddsidemargin}{-2.54cm}
-;; \\setlength{\\evensidemargin}{\\oddsidemargin}
-;; \\setlength{\\textheight}{\\paperheight}
-;; \\addtolength{\\textheight}{-\\headheight}
-;; \\addtolength{\\textheight}{-\\headsep}
-;; \\addtolength{\\textheight}{-\\footskip}
-;; \\addtolength{\\textheight}{-3cm}
-;; \\setlength{\\topmargin}{1.5cm}
-;; \\addtolength{\\topmargin}{-2.54cm}
-;; % my custom stuff
-;; \\usepackage{arev}
-;; ")
-
-;; (setq org-format-latex-options
-;;       (plist-put org-format-latex-options :background "Transparent"))
-
-(after! org
-  (defun scimax-org-latex-fragment-justify (justification)
-    "Justify the latex fragment at point with JUSTIFICATION.
-JUSTIFICATION is a symbol for 'left, 'center or 'right."
-    (interactive
-     (list (intern-soft
-            (completing-read "Justification (left): " '(left center right)
-                             nil t nil nil 'left))))
-    (let* ((ov (ov-at))
-           (beg (ov-beg ov))
-           (end (ov-end ov))
-           (shift (- beg (line-beginning-position)))
-           (img (overlay-get ov 'display))
-           (img (and (and img (consp img) (eq (car img) 'image)
-                          (image-type-available-p (plist-get (cdr img) :type)))
-                     img))
-           space-left offset)
-      (when (and img
-                 ;; This means the equation is at the start of the line
-                 (= beg (line-beginning-position))
-                 (or
-                  (string= "" (s-trim (buffer-substring end (line-end-position))))
-                  (eq 'latex-environment (car (org-element-context)))))
-        (setq space-left (- (window-max-chars-per-line) (car (image-size img)))
-              offset (floor (cond
-                             ((eq justification 'center)
-                              (- (/ space-left 2) shift))
-                             ((eq justification 'right)
-                              (- space-left shift))
-                             (t
-                              0))))
-        (when (>= offset 0)
-          (overlay-put ov 'before-string (make-string offset ?\ ))))))
-
-  (defun scimax-org-latex-fragment-justify-advice ()
-    "After advice function to justify fragments."
-    (scimax-org-latex-fragment-justify (or (plist-get org-format-latex-options :justify) 'left)))
-
-  (defun scimax-toggle-latex-fragment-justification ()
-    "Toggle if LaTeX fragment justification options can be used."
-    (interactive)
-    (if (not (get 'scimax-org-latex-fragment-justify-advice 'enabled))
-        (progn
-          (advice-add 'org--format-latex-make-overlay :after 'scimax-org-latex-fragment-justify-advice)
-          (put 'scimax-org-latex-fragment-justify-advice 'enabled t)
-          (message "Latex fragment justification enabled"))
-      (advice-remove 'org--format-latex-make-overlay 'scimax-org-latex-fragment-justify-advice)
-      (put 'scimax-org-latex-fragment-justify-advice 'enabled nil)
-      (message "Latex fragment justification disabled")))
-
-  ;; Numbered equations all have (1) as the number for fragments with vanilla
-  ;; org-mode. This code injects the correct numbers into the previews so they
-  ;; look good.
-  (defun scimax-org-renumber-environment (orig-func &rest args)
-    "A function to inject numbers in LaTeX fragment previews."
-    (let ((results '())
-          (counter -1)
-          (numberp))
-      (setq results (cl-loop for (begin . env) in
-                             (org-element-map (org-element-parse-buffer) 'latex-environment
-                               (lambda (env)
-                                 (cons
-                                  (org-element-property :begin env)
-                                  (org-element-property :value env))))
-                             collect
-                             (cond
-                              ((and (string-match "\\\\begin{equation}" env)
-                                    (not (string-match "\\\\tag{" env)))
-                               (cl-incf counter)
-                               (cons begin counter))
-                              ((string-match "\\\\begin{align}" env)
-                               (prog2
-                                   (cl-incf counter)
-                                   (cons begin counter)
-                                 (with-temp-buffer
-                                   (insert env)
-                                   (goto-char (point-min))
-                                   ;; \\ is used for a new line. Each one leads to a number
-                                   (cl-incf counter (count-matches "\\\\$"))
-                                   ;; unless there are nonumbers.
-                                   (goto-char (point-min))
-                                   (cl-decf counter (count-matches "\\nonumber")))))
-                              (t
-                               (cons begin nil)))))
-
-      (when (setq numberp (cdr (assoc (point) results)))
-        (setf (car args)
-              (concat
-               (format "\\setcounter{equation}{%s}\n" numberp)
-               (car args)))))
-
-    (apply orig-func args))
-
-
-  (defun scimax-toggle-latex-equation-numbering ()
-    "Toggle whether LaTeX fragments are numbered."
-    (interactive)
-    (if (not (get 'scimax-org-renumber-environment 'enabled))
-        (progn
-          (advice-add 'org-create-formula-image :around #'scimax-org-renumber-environment)
-          (put 'scimax-org-renumber-environment 'enabled t)
-          (message "Latex numbering enabled"))
-      (advice-remove 'org-create-formula-image #'scimax-org-renumber-environment)
-      (put 'scimax-org-renumber-environment 'enabled nil)
-      (message "Latex numbering disabled.")))
-
-  (advice-add 'org-create-formula-image :around #'scimax-org-renumber-environment)
-  (put 'scimax-org-renumber-environment 'enabled t))
-
 (after! org-beamer-mode
   (setq org-beamer-theme "[progressbar=foot]Warwick"))
-
-(defun my/org-present-prepare-slide (buffer-name heading)
-  (org-overview)  ; Show only top-level headlines
-  (org-show-entry)  ; Unfold the current entry
-  (org-show-children))  ; Show only direct subheadings of the slide but don't expand them
-
-(defun my/org-present-start ()
-  ;; Tweak font sizes
-  (setq-local face-remapping-alist '((default (:height 1.5) variable-pitch)
-                                     (header-line (:height 4.0) variable-pitch)
-                                     (org-document-title (:height 1.75) org-document-title)
-                                     (org-code (:height 1.55) org-code)
-                                     (org-verbatim (:height 1.55) org-verbatim)
-                                     (org-block (:height 1.25) org-block)
-                                     (org-block-begin-line (:height 0.7) org-block)))
-
-  ;; Set a blank header line string to create blank space at the top
-  (setq header-line-format " ")
-
-  ;; Display inline images automatically
-  (org-display-inline-images)
-
-  ;; Center the presentation and wrap lines
-  (visual-fill-column-mode 1)
-  (visual-line-mode 1))
-
-(defun my/org-present-end ()
-  ;; Reset font customizations
-  (setq-local face-remapping-alist '((default variable-pitch default)))
-
-  ;; Clear the header line string so that it isn't displayed
-  (setq header-line-format nil)
-
-  ;; Stop displaying inline images
-  (org-remove-inline-images)
-
-  ;; Stop centering the document
-  (visual-fill-column-mode 0)
-  (visual-line-mode 0))
-
-(use-package! org-present
-  :hook
-  ;; (org-mode-hook . variable-pitch-mode)
-  (org-present-mode-hook . my/org-present-start)
-  (org-present-mode-quit-hook . my/org-present-end)
-  (org-present-after-navigate-functions . my/org-present-prepare-slide)
-  :config
-  ;; Set reusable font name variables
-  (defvar my/fixed-width-font "FiraCode Nerd Font"
-    "The font to use for monospaced (fixed width) text.")
-  (defvar my/variable-width-font "Iosevka Aile"
-    "The font to use for variable-pitch (document) text.")
-
-  (set-face-attribute 'default nil :font my/fixed-width-font :weight 'light :height 180)
-  (set-face-attribute 'fixed-pitch nil :font my/fixed-width-font :weight 'light :height 190)
-  (set-face-attribute 'variable-pitch nil :font my/variable-width-font :weight 'light :height 1.3)
-
-  ;; Load org-faces to make sure we can set appropriate faces
-  (require 'org-faces)
-
-  ;; Resize Org headings
-  (dolist (face '((org-level-1 . 1.2)
-                  (org-level-2 . 1.1)
-                  (org-level-3 . 1.05)
-                  (org-level-4 . 1.0)
-                  (org-level-5 . 1.1)
-                  (org-level-6 . 1.1)
-                  (org-level-7 . 1.1)
-                  (org-level-8 . 1.1)))
-    (set-face-attribute (car face) nil :font my/variable-width-font :weight 'medium :height (cdr face)))
-
-  ;; Make the document title a bit bigger
-  (set-face-attribute 'org-document-title nil :font my/variable-width-font :weight 'bold :height 1.3)
-
-  ;; Make sure certain org faces use the fixed-pitch face when variable-pitch-mode is on
-  (set-face-attribute 'org-block nil :foreground nil :inherit 'fixed-pitch)
-  (set-face-attribute 'org-table nil :inherit 'fixed-pitch)
-  (set-face-attribute 'org-formula nil :inherit 'fixed-pitch)
-  (set-face-attribute 'org-code nil :inherit '(shadow fixed-pitch))
-  (set-face-attribute 'org-verbatim nil :inherit '(shadow fixed-pitch))
-  (set-face-attribute 'org-special-keyword nil :inherit '(font-lock-comment-face fixed-pitch))
-  (set-face-attribute 'org-meta-line nil :inherit '(font-lock-comment-face fixed-pitch))
-  (set-face-attribute 'org-checkbox nil :inherit 'fixed-pitch)
-
-  ;; Configure fill width
-  (setq visual-fill-column-width 110
-        visual-fill-column-center-text t))
-
-(setq org-re-reveal-theme "solarized"
-      org-re-reveal-revealjs-version "5.1"
-      org-re-reveal-slide-number "c/t"
-      org-re-reveal-mousewheel "t")
-
-(use-package! org-tree-slide
-  :after org-mode
-  :config
-  (setq org-image-actual-width nil))
 
 (after! org
   (setq org-hide-emphasis-markers t))
 
 (after! org
+  (setq org-modern-list '((45 . "–") (43 . "➤") (42 . "•"))
+        ;; org-modern-block-name '("▶ " . "▶ ")
+        ;; org-modern-block-name '(" " . " ")
+        org-modern-checkbox nil ;'((88 . "[x]") (45 . "[-]") . (32 . "[ ]"))
+        org-modern-fold-stars '(("◉" . "◉") ("○" . "○") ("✸" . "✸") ("✿" . "✿") ("▶" . "▼") ("▷" . "▽") ("⯈" . "⯆") ("▹" . "▿") ("▸" . "▾"))
+        org-modern-hide-stars nil
+        org-modern-table nil
+        ;; org-modern-priority (quote ((?A . "❗") (?B . "⬆") (?C . "⬇")))
+        org-modern-keyword "▶ "))
+
+;; (after! org
+;;   (setq org-adapt-indentation t))
+
+(use-package! org-modern-indent
+  :after org
+  :hook (org-mode . org-modern-indent-mode))
+
+(after! org
   (setq org-pretty-entities t))
 
-(use-package! org-roam
-  :defer t
-  :custom
-  (org-roam-directory "~/Documents/org/roam/")
-  (org-roam-completion-everywhere t)
-  (org-roam-db-location "~/Documents/org/roam/org-roam.db")
-  (org-roam-db-autosync-mode t)
-  (org-roam-completion-everywhere t))
+(after! org-roam
+  (setq org-roam-directory "~/Documents/org/roam/"
+        org-roam-completion-everywhere t
+        org-roam-db-location "~/Documents/org/roam/org-roam.db"
+        org-roam-db-autosync-mode t
+        org-roam-completion-everywhere t))
+
+(map! :leader
+      :prefix "n"
+      :desc  "Extract subtree" "r x" #'org-roam-extract-subtree)
 
 (use-package! websocket
   :after org-roam)
@@ -1898,137 +1457,11 @@ JUSTIFICATION is a symbol for 'left, 'center or 'right."
         org-roam-ui-update-on-save t
         org-roam-ui-open-on-start t))
 
-(after! org-mode
-  (defun +yas/org-src-header-p ()
-    "Determine whether `point' is within a src-block header or header-args."
-    (pcase (org-element-type (org-element-context))
-      ('src-block (< (point) ; before code part of the src-block
-                     (save-excursion (goto-char (org-element-property :begin (org-element-context)))
-                                     (forward-line 1)
-                                     (point))))
-      ('inline-src-block (< (point) ; before code part of the inline-src-block
-                            (save-excursion (goto-char (org-element-property :begin (org-element-context)))
-                                            (search-forward "]{")
-                                            (point))))
-      ('keyword (string-match-p "^header-args" (org-element-property :value (org-element-context))))))
-
-  (defun +yas/org-prompt-header-arg (arg question values)
-    "Prompt the user to set ARG header property to one of VALUES with QUESTION.
-  The default value is identified and indicated. If either default is selected,
-  or no selection is made: nil is returned."
-    (let* ((src-block-p (not (looking-back "^#\\+property:[ \t]+header-args:.*" (line-beginning-position))))
-           (default
-             (or
-              (cdr (assoc arg
-                          (if src-block-p
-                              (nth 2 (org-babel-get-src-block-info t))
-                            (org-babel-merge-params
-                             org-babel-default-header-args
-                             (let ((lang-headers
-                                    (intern (concat "org-babel-default-header-args:"
-                                                    (+yas/org-src-lang)))))
-                               (when (boundp lang-headers) (eval lang-headers t)))))))
-              ""))
-           default-value)
-      (setq values (mapcar
-                    (lambda (value)
-                      (if (string-match-p (regexp-quote value) default)
-                          (setq default-value
-                                (concat value " "
-                                        (propertize "(default)" 'face 'font-lock-doc-face)))
-                        value))
-                    values))
-      (let ((selection (consult--read question values :default default-value)))
-        (unless (or (string-match-p "(default)$" selection)
-                    (string= "" selection))
-          selection))))
-
-  (defun +yas/org-src-lang ()
-    "Try to find the current language of the src/header at `point'. Return nil otherwise."
-    (let ((context (org-element-context)))
-      (pcase (org-element-type context)
-        ('src-block (org-element-property :language context))
-        ('inline-src-block (org-element-property :language context))
-        ('keyword (when (string-match "^header-args:\\([^ ]+\\)" (org-element-property :value context))
-                    (match-string 1 (org-element-property :value context)))))))
-
-  (defun +yas/org-last-src-lang ()
-    "Return the language of the last src-block, if it exists."
-    (save-excursion
-      (beginning-of-line)
-      (when (re-search-backward "^[ \t]*#\\+begin_src" nil t)
-        (org-element-property :language (org-element-context)))))
-
-  (defun +yas/org-most-common-no-property-lang ()
-    "Find the lang with the most source blocks that has no global header-args, else nil."
-    (let (src-langs header-langs)
-      (save-excursion
-        (goto-char (point-min))
-        (while (re-search-forward "^[ \t]*#\\+begin_src" nil t)
-          (push (+yas/org-src-lang) src-langs))
-        (goto-char (point-min))
-        (while (re-search-forward "^[ \t]*#\\+property: +header-args" nil t)
-          (push (+yas/org-src-lang) header-langs)))
-
-      (setq src-langs
-            (mapcar #'car
-                    ;; sort alist by frequency (desc.)
-                    (sort
-                     ;; generate alist with form (value . frequency)
-                     (cl-loop for (n . m) in (seq-group-by #'identity src-langs)
-                              collect (cons n (length m)))
-                     (lambda (a b) (> (cdr a) (cdr b))))))
-
-      (car (cl-set-difference src-langs header-langs :test #'string=))))
-
-  (defun org-syntax-convert-keyword-case-to-lower ()
-    "Convert all #+KEYWORDS to #+keywords."
-    (interactive)
-    (save-excursion
-      (goto-char (point-min))
-      (let ((count 0)
-            (case-fold-search nil))
-        (while (re-search-forward "^[ \t]*#\\+[A-Z_]+" nil t)
-          (unless (s-matches-p "RESULTS" (match-string 0))
-            (replace-match (downcase (match-string 0)) t)
-            (setq count (1+ count))))
-        (message "Replaced %d occurances" count))))
-
-  (defun org-auto-file-export ()
-    "Export to file if #+export_file_name is found in org file metadata"
-    (interactive)
-    (save-excursion
-      (goto-char (point-min))
-      (while (re-search-forward "^[ \t]*#\\+export_file_name:*" nil t)
-      ;; (while (re-search-forward "*export_file_name:*" nil t)
-        (setq org_export_fname (org-org-export-to-org))
-        (message "Exported org file %s" org_export_fname))))
-
-  (add-hook 'org-mode-hook
-            (lambda ()
-              (add-hook 'before-save-hook #'org-syntax-convert-keyword-case-to-lower nil 'make-it-local)
-              (add-hook 'after-save-hook #'org-auto-file-export nil 'make-it-local))))
-
 (map! :map org-mode-map
       :after org
       :localleader
       "'" nil
       "`" #'org-edit-special)
-
-;; (use-package! toc-org
-;;   :commands toc-org-enable
-;;   :init (add-hook 'org-mode-hook 'toc-org-enable))
-
-;; (after! org
-;;   (defun add-toc ()
-;;     (interactive)
-;;     (insert "* Table of Contents :toc:\n\n")))
-
-;; (map! :map org-mode-map
-;;       :after org
-;;       :localleader
-;;       :desc "insert-toc"
-;;       "C" #'add-toc)
 
 (after! org
   (setq org-log-done 'time)
