@@ -52,20 +52,20 @@
 (package! atomic-chrome)
 (package! auctex)
 (package! catppuccin-theme)
-(package! chatgpt-shell
-  :recipe (:host github :repo "xenodium/chatgpt-shell" :files ("chatgpt-shell*.el")))
+;; (package! chatgpt-shell
+;;   :recipe (:host github :repo "xenodium/chatgpt-shell" :files ("chatgpt-shell*.el")))
 (package! circadian
   :recipe (:host github :repo "guidoschmidt/circadian.el"))
-(package! company-org-block)
+;; (package! company-org-block)
 (package! copilot
   :recipe (:host github :repo "copilot-emacs/copilot.el" :files ("*.el")))
 (package! copilot-chat
   :recipe (:host github :repo "chep/copilot-chat.el" :files ("*.el")))
-;; (package! ellama)
 ;; (package! emacsql :pin "491105a")
+;; (package! eat)
 (package! engrave-faces)
+;; (package! flycheck-languagetool)
 ;; (package! fortpy)
-;; (package! gptel)
 (package! impatient-mode)
 (package! indent-bars)
 (package! jinx)
@@ -77,6 +77,10 @@
 ;;                     "Manifest.toml" "Project.toml"))) ;; project files
 (package! languagetool)
 (package! live-py-mode)
+;; (package! lsp-ltex-plus
+;;   :recipe (:host github :repo "emacs-languagetool/lsp-ltex-plus"))
+;; (package! lsp-ltex
+;;   :recipe (:host github :repo "emacs-languagetool/lsp-ltex"))
 ;; (package! lsp-julia)
 ;; (package! moom)
 (package! nov)
@@ -89,6 +93,8 @@
   :recipe (:host github :repo "andras-simonyi/org-cite-csl-activate"))
 ;; (package! org-edit-latex)
 (package! org-fragtog)
+(package! org-modern-indent
+  :recipe (:host github :repo "jdtsmith/org-modern-indent"))
 (package! orgnote
   :recipe (:host github :repo "artawower/orgnote.el"))
 (package! org-pandoc-import
@@ -106,6 +112,7 @@
            :repo "tecosaur/ox-pluto"))
 (package! poetry)
 (package! pov-mode)
+(package! rainbow-delimiters)
 (package! screenshot
   :recipe (:host github
            :repo "tecosaur/screenshot"))
