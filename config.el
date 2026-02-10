@@ -1,8 +1,8 @@
 ;;; $DOOMDIR/config.el -*- lexical-binding: t; -*-
 
 (after! browse-url
-  (setq browse-url-browser-function 'browse-url-firefox
-        browse-url-generic-program (executable-find "firefox")))
+  (setq browse-url-browser-function 'browse-url-default-browser))
+        ;; browse-url-generic-program (executable-find "firefox")))
 
 ;; (setq browse-url-browser-function 'xwidget-webkit-browse-url)
 
@@ -333,6 +333,8 @@
   (consult-buffer))
 
 (setq window-combination-resize t)
+
+(add-to-list 'initial-frame-alist '(fullscreen . maximized))
 
 (setq yas-triggers-in-field t)
 
@@ -1036,7 +1038,89 @@
                                      :cwd nil)))
 
 (after! org
-  (setq org-agenda-files '("~/Documents/org/roam/*.org")))
+  (setq org-agenda-files (directory-files-recursively "~/Documents/org/" "\\.org$")))
+
+;; (use-package org-super-agenda
+;;   :after org-agenda
+;;   :config
+;;   ;; 1. Enable the mode globally
+;;   (org-super-agenda-mode 1)
+
+;;   ;; 2. Optional: Style the headers to be slightly larger and underlined
+;;   (setq org-super-agenda-header-properties '((face (:height 1.1 :underline t :weight bold)))
+;;         org-super-agenda-header-separator "\n")
+
+;;   ;; 3. Define the Grouping Strategy
+;;   (setq my-super-agenda-groups
+;;         '(;; --- CRITICAL ITEMS ---
+;;           (:name "Overdue"
+;;                  :deadline past
+;;                  :face error
+;;                  :order 1)
+;;           (:name "High Priority"
+;;                  :priority "A"
+;;                  :order 2)
+
+;;           ;; --- DAILY CONTEXT ---
+;;           (:name "Today"
+;;                  :time-grid t
+;;                  :date today
+;;                  :scheduled today
+;;                  :deadline today  ;; Show deadlines due today in "Today" section
+;;                  :order 3)
+
+;;           ;; --- FUTURE PLANNING (Date-based) ---
+;;           ;; Note: Items with dates are pulled here first, removing them from "Projects" etc.
+;;           (:name "Upcoming Deadlines"
+;;                  :deadline future
+;;                  :order 4)
+;;           (:name "Scheduled"
+;;                  :scheduled future
+;;                  :order 5)
+
+;;           ;; --- ACTIVE WORKFLOW (Keyword-based) ---
+;;           (:name "In Progress"
+;;                  :todo ("STRT" "[-]")
+;;                  :order 6)
+;;           (:name "Projects"
+;;                  :todo "PROJ"
+;;                  :order 10)
+;;           (:name "Routines"
+;;                  :todo "LOOP"
+;;                  :order 11)
+;;           (:name "Next Actions"
+;;                  :todo ("TODO" "[ ]")
+;;                  :order 12)
+
+;;           ;; --- PASSIVE / BLOCKED ---
+;;           (:name "Waiting / On Hold"
+;;                  :todo ("WAIT" "HOLD" "[?]")
+;;                  :order 20)
+;;           (:name "Ideas"
+;;                  :todo "IDEA"
+;;                  :order 30)
+;;           (:name "Decisions / Review"
+;;                  :todo ("OKAY" "YES" "NO")
+;;                  :order 40)
+
+;;           ;; --- LEFTOVERS ---
+;;           (:name "Other"
+;;                  :auto-category t
+;;                  :order 90)))
+
+;;   ;; 4. Apply globally (This ensures <SPC> o A works nicely)
+;;   (setq org-super-agenda-groups my-super-agenda-groups)
+
+;;   ;; 5. Define Custom Dashboard Command (This ensures <SPC> o a s works)
+;;   (add-to-list 'org-agenda-custom-commands
+;;                '("s" "Super Dashboard"
+;;                  ((alltodo "" ((org-agenda-overriding-header "")
+;;                                (org-super-agenda-groups my-super-agenda-groups)
+;;                                ;; SORTING:
+;;                                ;; 1. Deadlines (soonest first)
+;;                                ;; 2. Scheduled (soonest first)
+;;                                ;; 3. Priority (A -> B -> C)
+;;                                (org-agenda-sorting-strategy '(deadline-up scheduled-up priority-down))))))))
 
 (use-package! org-appear
   :after org
@@ -1430,15 +1514,25 @@
   (setq org-pretty-entities t))
 
 (after! org-roam
-  (setq org-roam-directory "~/Documents/org/roam/"
+  (setq org-roam-directory "~/Documents/org/roaming/"
         org-roam-completion-everywhere t
-        org-roam-db-location "~/Documents/org/roam/org-roam.db"
+        org-roam-db-location "~/Documents/org/roaming/org-roam.db"
         org-roam-db-autosync-mode t
         org-roam-completion-everywhere t))
 
 (map! :leader
       :prefix "n"
       :desc  "Extract subtree" "r x" #'org-roam-extract-subtree)
+
+;; (after! org-roam
+;;   (setq org-roam-mode-sections
+;;         (list #'org-roam-backlinks-section
+;;               #'org-roam-reflinks-section
+;;               #'org-roam-unlinked-references-section))
+;;   (add-hook 'org-roam-mode-hook #'org-roam-setup))
+
+;; ;; Automatically open the side-window for Org-roam files
+;; (add-hook 'org-roam-find-file-hook #'org-roam-buffer-toggle)
 
 (use-package! websocket
   :after org-roam)
@@ -1455,7 +1549,8 @@
   (setq org-roam-ui-sync-theme t
         org-roam-ui-follow t
         org-roam-ui-update-on-save t
-        org-roam-ui-open-on-start t))
+        org-roam-ui-open-on-start t
+        org-roam-ui-browser-function #'xwidget-webkit-browse-url))
 
 (map! :map org-mode-map
       :after org
