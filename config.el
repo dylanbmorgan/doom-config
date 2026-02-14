@@ -1390,66 +1390,15 @@
     :after #' org-cdlatex-environment-indent
     (org-edit-latex-environment)))
 
-(add-hook! 'org-mode-hook #'org-fragtog-mode)
+(add-hook! 'org-mode-hook #'org-latex-preview-mode)
 
-(after! org
-  (setq org-preview-latex-default-process 'dvisvgm)
-
-  ;; Set the image size depending on which computer I'm on
-  (let ((image-size-adjust
-         (if (string= (system-name) "maccie")
-             '(2.0 . 2.0)
-           '(1.6 . 1.6)))) ; fallback value
-
-    (setf (alist-get 'dvipng org-preview-latex-process-alist)
-          `(:programs ("lualatex" "dvipng")
-            :description "dvi > png"
-            :message "You need to install the programs: lualatex and dvipng."
-            :image-input-type "dvi"
-            :image-output-type "png"
-            :image-size-adjust (1.0 . 1.0)
-            :latex-compiler ("lualatex --interaction nonstopmode --output-format=dvi --output-directory %o %f")
-            :image-converter ("dvipng -D %D -T tight -o %O %f")
-            :transparent-image-converter ("dvipng -D %D -T tight -bg Transparent -o %O %f"))
-
-          (alist-get 'dvisvgm org-preview-latex-process-alist)
-          `(:programs ("lualatex" "dvisvgm")
-            :description "dvi > svg"
-            :message "you need to install the programs: lualatex and dvisvgm."
-            :image-input-type "dvi"
-            :image-output-type "svg"
-            :image-size-adjust ,image-size-adjust
-            :latex-compiler ("lualatex --interaction nonstopmode --output-format=dvi --output-directory %o %f")
-            :image-converter ("dvisvgm %f --no-fonts --exact-bbox --scale=%S --output=%O"))
-
-          (alist-get 'imagemagick org-preview-latex-process-alist)
-          `(:programs ("lualatex" "convert")
-            :description "pdf > png"
-            :message "you need to install the programs: latex and imagemagick."
-            :image-input-type "pdf"
-            :image-output-type "png"
-            :image-size-adjust (1.0 . 1.0)
-            :latex-compiler ("lualatex --interaction nonstopmode --output-directory %o %f")
-            :image-converter ("magick convert -density %D -trim -antialias %f -quality 100 %O")))
-
-    (plist-put org-format-latex-options :scale 1.5)
-    (plist-put org-format-latex-options :html-scale 1.0)
-    ;; (plist-put org-format-latex-options :foreground "white")
-    (plist-put org-format-latex-options :background "Transparent")
-    ;; (plist-put org-format-latex-options :matchers '("begin" "$1" "$" "$$" "\\(" "\\)"))))
-    (plist-put org-format-latex-options :matchers '("begin" "$1" "$" "$$"))))
-
-;; '(org-format-latex-options
-;;   (quote
-;;    (:foreground default :background default :scale 2 :html-foreground "Black" :html-background "Transparent" :html-scale 1 :matchers
-;;     ("begin" "$1" "$" "$$" "\\(" "\\)")))))
-
-;; (defun update-org-latex-fragments ()
-;;   (org-latex-preview '(64))
-;;   (plist-put org-format-latex-options :scale text-scale-mode-amount)
-;;   (org-latex-preview '(16)))
-
-;; (add-hook! 'text-scale-mode-hook #'update-org-latex-fragments)
+(use-package! org-latex-preview
+  :after org
+  :config
+  (plist-put org-latex-preview-appearance-options :page-width 1.0)
+  (plist-put org-latex-preview-appearance-options :zoom 1.2)
+  (setq org-latex-preview-mode-display-live t
+        org-latex-preview-mode-update-delay 0.0))
 
 (use-package! engrave-faces-latex
   :after ox-latex
