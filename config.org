@@ -2840,7 +2840,15 @@ Typing out src block headers all the time is a pain
 # #+end_src
 
 ** SRC Blocks
-Define a new keybinding to edit source blocks
+- Add tree sitter language modes
+
+#+begin_src emacs-lisp
+(after! org
+  (add-to-list 'org-src-lang-modes '("python" . python-ts))
+  (add-to-list 'org-src-lang-modes '("julia" . julia-ts)))
+#+end_src
+
+- Define a new keybinding to edit source blocks
 
 #+begin_src emacs-lisp
 (map! :map org-mode-map

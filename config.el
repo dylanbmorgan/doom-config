@@ -1501,6 +1501,10 @@
         org-roam-ui-open-on-start t
         org-roam-ui-browser-function #'xwidget-webkit-browse-url))
 
+(after! org
+  (add-to-list 'org-src-lang-modes '("python" . python-ts))
+  (add-to-list 'org-src-lang-modes '("julia" . julia-ts)))
+
 (map! :map org-mode-map
       :after org
       :localleader
