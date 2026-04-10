@@ -1,5 +1,20 @@
 ;;; $DOOMDIR/config.el -*- lexical-binding: t; -*-
 
+(setq user-full-name (password-store-get "emacs/personal_info/name")
+      user-mail-address (password-store-get "emacs/personal_info/email"))
+
+(setq epg-gpg-program "/opt/homebrew/bin/gpg")
+
+(after! epa
+  (setq epg-pinentry-mode nil))
+
+(after! password-store
+  (setq epa-file-encrypt-to (list (password-store-get "emacs/personal_info/email"))))
+
+(after! auth-source
+  (setq auth-sources '("~/.authinfo.gpg")
+        auth-source-cache-expiry 21600))
+
 (after! browse-url
   (setq browse-url-browser-function 'browse-url-default-browser))
         ;; browse-url-generic-program (executable-find "firefox")))
@@ -16,11 +31,13 @@
 (setq frame-title-format
       '(""
         (:eval
-         (if (s-contains-p org-roam-directory (or buffer-file-name ""))
-             (replace-regexp-in-string
-              ".*/[0-9]*-?" "☰ "
-              (subst-char-in-string ?_ ?  buffer-file-name))
-           "%b"))
+         (let ((fname (buffer-file-name)))
+           (if (and fname (boundp 'org-roam-directory) org-roam-directory
+                    (s-contains-p org-roam-directory fname))
+               (replace-regexp-in-string
+                ".*/[0-9]*-?" "☰ "
+                (subst-char-in-string ?_ ?  fname))
+             "%b")))
         (:eval
          (let ((project-name (projectile-project-name)))
            (unless (string= "-" project-name)
@@ -139,8 +156,9 @@
 (after! flycheck
   (setq flycheck-checker-error-threshold 10000))
 
-;; Change the default shell to fish
+;; Use fish for interactive shells, /bin/sh for non-interactive (org-babel, TRAMP)
 (setq explicit-shell-file-name (executable-find "fish"))
+(setq shell-file-name "/bin/sh")
 
 ;; Use the system trash
 (setq delete-by-moving-to-trash t
@@ -190,38 +208,30 @@
         scroll-margin 0))
         ;; scroll-margin 2))  ; TODO when scroll-margin 2 is supported
 
-;; (setq epg-gpg-program "/opt/homebrew/bin/gpg")
-
-;; (use-package! gptel
-;;  :config
-;;  (setq! gptel-api-key "your key"))
-
-(after! gptel
-  ;; (gptel-make-gh-copilot "Copilot")
-  (setq gptel-backend (gptel-make-gh-copilot "Copilot")
-        gptel-model 'gpt-4.1)
+(use-package! gptel
+  :config
+  (setq gptel-backend (gptel-make-anthropic "Claude"
+                        :stream t
+                        :key #'gptel-api-key-from-auth-source)
+        gptel-model 'claude-opus-4-6)
+  
+  (gptel-make-gh-copilot "Copilot")
 
   (add-hook 'gptel-post-stream-hook 'gptel-auto-scroll)
   (add-hook 'gptel-post-response-functions 'gptel-end-of-response))
 
-(use-package! languagetool
-  :defer t
-  :commands (languagetool-check
-             languagetool-clear-suggestions
-             languagetool-correct-at-point
-             languagetool-correct-buffer
-             languagetool-set-language
-             languagetool-server-mode
-             languagetool-server-start
-             languagetool-server-stop)
+(set-popup-rule! "\\*\\(Claude\\|Copilot\\)\\*"
+  :side 'right
+  :width 0.3
+  :select t)
+
+(use-package! claude-code-ide
   :config
-  (when (string= (system-name) "maccie")
-    (setq languagetool-java-arguments '("-Dfile.encoding=UTF-8")
-          languagetool-console-command "/opt/homebrew/Cellar/languagetool/6.6/libexec/languagetool-commandline.jar"
-          languagetool-server-command "/opt/homebrew/Cellar/languagetool/6.6/libexec/languagetool-server.jar"
-          (let ((credential (auth-source-user-and-password "languagetool")))
-            (setq languagetool-username (car credential)
-                  languagetool-api-key (cadr credential))))))
+  (claude-code-ide-emacs-tools-setup)) ; Optionally enable Emacs MCP tools
+
+(map! :leader
+      :prefix "o l"
+      "c" #'claude-code-ide-menu)
 
 (setq display-line-numbers-type 'relative)
 
@@ -229,12 +239,6 @@
 (setq visual-line-fringe-indicators '(left-curly-arrow right-curly-arrow))
 
 ;; (setq-default auto-fill-function 'do-auto-fill)
-
-(setq user-full-name (password-store-get "emacs/personal_info/name")
-      user-mail-address (password-store-get "emacs/personal_info/email"))
-
-(after! auth-source
-  (setq auth-source-cache-expiry 21600))  ; Change default to 6 hours to get me through most of a work day
 
 (setq projectile-sort-order 'recently-active
       projectile-auto-discover t
@@ -324,6 +328,7 @@
   (setq imenu-auto-rescan t))
 
 (setq tramp-default-method "ssh")
+(setq tramp-default-remote-shell "/bin/sh")
 
 (setq evil-vsplit-window-right t
       evil-split-window-below t)
@@ -333,8 +338,6 @@
   (consult-buffer))
 
 (setq window-combination-resize t)
-
-(add-to-list 'initial-frame-alist '(fullscreen . maximized))
 
 (setq yas-triggers-in-field t)
 
@@ -522,6 +525,19 @@
   ;; (centaur-tabs-change-fonts "P22 Underground Book" 160))
 ;; (setq x-underline-at-descent-line t)
 
+;; (set-frame-parameter nil 'ns-alpha-elements
+;;                      '(
+;;                        ns-alpha-default
+;;                        ns-alpha-fringe
+;;                        ns-alpha-box
+;;                        ns-alpha-stipple
+;;                        ns-alpha-relief
+;;                        ns-alpha-glyphs
+;;                        ))
+
+;; (set-frame-parameter nil 'alpha-background 0.75)
+;; (set-frame-parameter nil 'ns-background-blur 100)
+
 ;; (after! solar
 ;;   (setq calendar-latitude (string-to-number (password-store-get "emacs/solar/latitude")))
 ;;   (setq calendar-longitude (string-to-number (password-store-get "emacs/solar/longitude"))))
@@ -538,7 +554,7 @@
 ;; (add-to-list 'default-frame-alist '(alpha 85 85))
 
 ;; (doom/set-frame-opacity 100)
-(doom/set-frame-opacity 95)
+;; (doom/set-frame-opacity 95)
 ;; (doom/set-frame-opacity 85)
 
 (map! :leader
@@ -825,12 +841,12 @@
         lsp-ltex-plus-language "en-GB"
         lsp-ltex-plus-disabled-rules '(:en-GB ["OXFORD_SPELLING_Z_NOT_S"])
         lsp-ltex-plus-completion-enabled t
-        lsp-ltex-plus-languagetool-http-server-uri ""
+        ;; lsp-ltex-plus-languagetool-http-server-uri ""
         lsp-ltex-plus-additional-rules-enable-picky-rules t))
 
-(let ((credential (auth-source-user-and-password "languagetool")))
-  (setq lsp-ltex-plus-languagetool-org-username (car credential)
-        lsp-ltex-plus-languagetool-org-api-key (cadr credential)))
+;; (let ((credential (auth-source-user-and-password "languagetool")))
+;;   (setq lsp-ltex-plus-languagetool-org-username (car credential)
+;;         lsp-ltex-plus-languagetool-org-api-key (cadr credential)))
 
 (after! LaTeX-mode
   ;; When on mac
@@ -1027,16 +1043,6 @@
 
 ;; (add-hook! 'rust-mode-hook #'prettify-symbols-mode)
 
-(after! rustic
-  (require 'dap-cpptools)
-  (dap-register-debug-template "Rust::GDB Run Configuration"
-                               (list :type "gdb"
-                                     :request "launch"
-                                     :name "GDB::Run"
-                                     :gdbpath "rust-gdb"
-                                     :target nil
-                                     :cwd nil)))
-
 (after! org
   (setq org-agenda-files (directory-files-recursively "~/Documents/org/" "\\.org$")))
 
@@ -1136,7 +1142,7 @@
 (after! org
   (setq org-attach-id-dir "~/Documents/org/.attach/"
         org-attach-dir-relative t
-        org-attach-method 'lns
+        org-attach-method 'mv
         org-attach-archive-delete 'query
         org-attach-auto-tag "attach"))
 
@@ -1306,6 +1312,176 @@
   (setq org-list-use-circular-motion t
         org-list-allow-alphabetical t))
 
+(defun dm/org--indent-length (s)
+  "Return the visual indentation length of string S (tabs = 8 spaces)."
+  (length (replace-regexp-in-string "\t" "        " s)))
+
+(defun dm/org--heading-boundary ()
+  "Return the position of the previous heading line, or `point-min'."
+  (save-excursion
+    (if (re-search-backward "^\\*+ " nil t)
+        (line-beginning-position)
+      (point-min))))
+
+(defun dm/org--find-prev-sibling-item (indent-len limit)
+  "Search backward from point for a list item at INDENT-LEN, stopping at LIMIT.
+Skip items at deeper indent levels.  Stop if a less-indented item
+or a heading is reached."
+  (let ((found nil)
+        (item-re "^\\([ \t]*\\)\\([-+]\\|[0-9]+[.)]\\|[a-zA-Z][.)]\\) "))
+    (save-excursion
+      (while (and (not found)
+                  (re-search-backward item-re limit t))
+        (let ((candidate-indent-len (dm/org--indent-length (match-string 1))))
+          (cond
+           ((= candidate-indent-len indent-len) (setq found (point)))
+           ((< candidate-indent-len indent-len) (goto-char limit))))))
+    found))
+
+(defun dm/org--prev-sibling-has-nested (prev-item-pos item-bol indent-len)
+  "Check if the list item at PREV-ITEM-POS has nested content before ITEM-BOL.
+INDENT-LEN is the visual indent of both sibling items."
+  (save-excursion
+    (goto-char prev-item-pos)
+    (let ((prev-eol (line-end-position))
+          (has-nested nil))
+      (goto-char prev-eol)
+      (while (and (not has-nested)
+                  (< (point) item-bol)
+                  (zerop (forward-line 1))
+                  (< (point) item-bol))
+        (when (not (looking-at-p "^[ \t]*$"))
+          (let* ((line-indent (if (looking-at "^\\([ \t]*\\)")
+                                  (match-string 1) ""))
+                 (line-indent-len (dm/org--indent-length line-indent)))
+            (when (> line-indent-len indent-len)
+              (setq has-nested t)))))
+      has-nested)))
+
+(defun dm/org-normalize-blank-lines ()
+  "Normalize blank lines in org buffers.
+Insert a blank line before a heading or list item only if the
+previous sibling at the same level had nested content underneath it.
+Remove blank lines between consecutive simple siblings.
+Two-phase: collect edits first, apply bottom-to-top so positions stay valid."
+  (interactive)
+  (save-excursion
+    ;; Phase 0: collapse runs of 3+ newlines to exactly 2
+    (goto-char (point-min))
+    (while (re-search-forward "\n\\{3,\\}" nil t)
+      (replace-match "\n\n"))
+
+    ;; Phase 1: collect all edit actions
+    (let ((actions nil)
+          (item-re "^\\([ \t]*\\)\\([-+]\\|[0-9]+[.)]\\|[a-zA-Z][.)]\\) "))
+
+      ;; Headings
+      (goto-char (point-min))
+      (while (re-search-forward "^\\(\\*+\\) " nil t)
+        (let* ((level (length (match-string 1)))
+               (heading-bol (line-beginning-position))
+               ;; Count blank lines before this heading
+               (blanks 0)
+               (pos heading-bol))
+          (save-excursion
+            (goto-char pos)
+            (while (and (> pos (point-min))
+                        (progn (forward-line -1)
+                               (looking-at-p "^$")))
+              (setq blanks (1+ blanks)
+                    pos (point))))
+          ;; Check what the previous non-blank line is
+          (save-excursion
+            (goto-char pos)
+            (when (> pos (point-min))
+              (forward-line -1)
+              (cond
+               ;; Previous non-blank line is a heading — no blank line wanted
+               ((looking-at-p "^\\*+ ")
+                (when (> blanks 0)
+                  (push (list 'delete pos heading-bol blanks) actions)))
+               ;; Otherwise check for same-level sibling with content
+               (t
+                (goto-char heading-bol)
+                (when (re-search-backward (format "^\\*\\{%d\\} " level) nil t)
+                  (let* ((prev-end (line-end-position))
+                         (region (buffer-substring-no-properties prev-end heading-bol))
+                         (has-content (string-match-p
+                                       "^[^\n*]"
+                                       (replace-regexp-in-string "\\`\n+" "" region))))
+                    (if has-content
+                        (when (= blanks 0)
+                          (push (list 'insert heading-bol "\n") actions))
+                      (when (> blanks 0)
+                        (push (list 'delete pos heading-bol blanks) actions)))))))))))
+
+      ;; List items
+      (goto-char (point-min))
+      (while (re-search-forward item-re nil t)
+        (let* ((indent (match-string 1))
+               (indent-len (dm/org--indent-length indent))
+               (item-bol (line-beginning-position))
+               (boundary (save-excursion
+                           (goto-char item-bol)
+                           (dm/org--heading-boundary)))
+               (prev-pos (save-excursion
+                           (goto-char item-bol)
+                           (dm/org--find-prev-sibling-item indent-len boundary))))
+          (when prev-pos
+            (let* ((has-nested (dm/org--prev-sibling-has-nested
+                                prev-pos item-bol indent-len))
+                   ;; Count existing blank lines before this item
+                   (blanks 0)
+                   (pos item-bol))
+              (save-excursion
+                (goto-char pos)
+                (while (and (> pos (point-min))
+                            (progn (forward-line -1)
+                                   (looking-at-p "^$")))
+                  (setq blanks (1+ blanks)
+                        pos (point))))
+              (if has-nested
+                  (when (= blanks 0)
+                    (push (list 'insert item-bol "\n") actions))
+                (when (> blanks 0)
+                  (push (list 'delete pos item-bol blanks) actions)))))))
+
+      ;; Phase 2: apply edits bottom-to-top so positions remain valid
+      (setq actions (sort actions (lambda (a b) (> (cadr a) (cadr b)))))
+      (dolist (act actions)
+        (pcase (car act)
+          ('insert
+           (goto-char (cadr act))
+           (insert (caddr act)))
+          ('delete
+           ;; Delete `n' blank lines: each is 1 char (the newline)
+           (let ((start (cadr act))
+                 (n (cadddr act)))
+             (goto-char start)
+             (delete-region start (+ start n)))))))))
+
+(defun dm/org-normalize-blank-lines-deferred (&rest _)
+  "Run blank line normalization after a short idle delay."
+  (when (derived-mode-p 'org-mode)
+    (run-with-idle-timer 0.1 nil #'dm/org-normalize-blank-lines)))
+
+(advice-add 'org-insert-heading :after #'dm/org-normalize-blank-lines-deferred)
+(advice-add 'org-insert-item :after #'dm/org-normalize-blank-lines-deferred)
+(advice-add 'org-shiftmetaleft :after #'dm/org-normalize-blank-lines-deferred)
+(advice-add 'org-shiftmetaright :after #'dm/org-normalize-blank-lines-deferred)
+(advice-add 'org-metaleft :after #'dm/org-normalize-blank-lines-deferred)
+(advice-add 'org-metaright :after #'dm/org-normalize-blank-lines-deferred)
+(advice-add 'org-metareturn :after #'dm/org-normalize-blank-lines-deferred)
+(advice-add 'org-promote-subtree :after #'dm/org-normalize-blank-lines-deferred)
+(advice-add 'org-demote-subtree :after #'dm/org-normalize-blank-lines-deferred)
+(advice-add 'org-promote :after #'dm/org-normalize-blank-lines-deferred)
+(advice-add 'org-demote :after #'dm/org-normalize-blank-lines-deferred)
+
+(add-hook 'before-save-hook
+          (lambda ()
+            (when (derived-mode-p 'org-mode)
+              (dm/org-normalize-blank-lines))))
+
 (after! org
   ;; (dolist (face '((org-level-1 . 1.2)
   ;;                 (org-level-2 . 1.1)
@@ -1390,16 +1566,6 @@
     :after #' org-cdlatex-environment-indent
     (org-edit-latex-environment)))
 
-(add-hook! 'org-mode-hook #'org-latex-preview-mode)
-
-(use-package! org-latex-preview
-  :after org
-  :config
-  (plist-put org-latex-preview-appearance-options :page-width 1.0)
-  (plist-put org-latex-preview-appearance-options :zoom 1.2)
-  (setq org-latex-preview-mode-display-live t
-        org-latex-preview-mode-update-delay 0.0))
-
 (use-package! engrave-faces-latex
   :after ox-latex
   :config
@@ -1467,7 +1633,27 @@
         org-roam-completion-everywhere t
         org-roam-db-location "~/Documents/org/roaming/org-roam.db"
         org-roam-db-autosync-mode t
-        org-roam-completion-everywhere t))
+        org-roam-capture-templates
+        '(("d" "default" plain "%?"
+           :target (file+head "%<%Y%m%d%H%M%S>-${slug}.org"
+                              "#+title: ${title}\n")
+           :unnarrowed t)
+          ("p" "personal" plain "%?"
+           :target (file+head "personal/%<%Y%m%d%H%M%S>-${slug}.org"
+                              "#+title: ${title}\n")
+           :unnarrowed t)
+          ("r" "research" plain "%?"
+           :target (file+head "research/%<%Y%m%d%H%M%S>-${slug}.org"
+                              "#+title: ${title}\n")
+           :unnarrowed t)
+          ("t" "tech" plain "%?"
+           :target (file+head "tech/%<%Y%m%d%H%M%S>-${slug}.org"
+                              "#+title: ${title}\n")
+           :unnarrowed t)
+          ("w" "work" plain "%?"
+           :target (file+head "work/%<%Y%m%d%H%M%S>-${slug}.org"
+                              "#+title: ${title}\n")
+           :unnarrowed t))))
 
 (map! :leader
       :prefix "n"
@@ -1502,8 +1688,15 @@
         org-roam-ui-browser-function #'xwidget-webkit-browse-url))
 
 (after! org
-  (add-to-list 'org-src-lang-modes '("python" . python-ts))
-  (add-to-list 'org-src-lang-modes '("julia" . julia-ts)))
+  (setf (alist-get "python" org-src-lang-modes nil nil #'equal) 'python-ts)
+  (add-to-list 'org-src-lang-modes '("shell" . sh))
+  (add-to-list 'org-src-lang-modes '("julia" . julia-ts))
+  (setf (alist-get "json" org-src-lang-modes nil nil #'equal) 'js-json)
+  (add-to-list 'org-src-lang-modes '("http" . restclient))
+
+  (defun org-babel-execute:json (body _params)
+    "Return the JSON body as-is (no execution)."
+    body))
 
 (map! :map org-mode-map
       :after org

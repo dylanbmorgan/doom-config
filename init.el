@@ -118,7 +118,8 @@
        (debugger +lsp)          ; FIXME stepping through code, to help you add bugs
        direnv
        (docker
-        +lsp)
+        +lsp
+        +tree-sitter)
        ;;editorconfig      ; let someone else argue about tabs vs spaces
        ein               ; tame Jupyter notebooks with emacs
        (eval +overlay)     ; run code, run (also, repls)
@@ -172,7 +173,9 @@
        ;;fsharp            ; ML stands for Microsoft's Language
        ;;fstar             ; (dependent) types and (monadic) effects and Z3
        ;;gdscript          ; the language you waited for
-       ;;(go +lsp)         ; the hipster dialect
+       (go
+        +lsp
+        +tree-sitter)         ; the hipster dialect
        ;;(graphql +lsp)    ; Give queries a REST
        ;;(haskell +lsp)    ; a language that's lazier than I am
        ;;hy                ; readability of scheme w/ speed of python
@@ -181,7 +184,9 @@
         +tree-sitter
         +lsp)              ; At least it ain't XML
        ;;(java +lsp)       ; the poster child for carpal tunnel syndrome
-       ;;javascript        ; all(hope(abandon(ye(who(enter(here))))))
+       (javascript
+        +lsp
+        +tree-sitter)        ; all(hope(abandon(ye(who(enter(here))))))
        (julia
         +lsp
         +tree-sitter
@@ -200,7 +205,6 @@
        ;;nix               ; I hereby declare "nix geht mehr!"
        ;;ocaml             ; an objective camel
        (org
-        +contacts
         +dragndrop
         +crypt
         +gnuplot
@@ -210,7 +214,7 @@
         +pandoc
         +present
         +pretty
-        +roam2)               ; organize your plain life in plain text
+        +roam)               ; organize your plain life in plain text
        ;;php               ; perl's insecure younger brother
        ;;plantuml          ; diagrams for confusing people more
        ;;graphviz          ; diagrams for confusing yourself even more
@@ -218,14 +222,13 @@
        (python
         +cython
         +lsp
-        ;; +poetry
-        ;; +pyenv
         +tree-sitter
-        +pyright)            ; beautiful is better than ugly
+        +uv)            ; beautiful is better than ugly
        ;;qt                ; the 'cutest' gui framework ever
        ;;racket            ; a DSL for DSLs
        ;;raku              ; the artist formerly known as perl6
-       ;;rest              ; Emacs as a REST client
+       (rest
+        +jq)              ; Emacs as a REST client
        ;;rst               ; ReST in peace
        ;;(ruby +rails)     ; 1.step {|i| p "Ruby is #{i.even? ? 'love' : 'life'}"}
        (rust
@@ -235,8 +238,7 @@
        ;;(scheme +guile)   ; a fully conniving family of lisps
        (sh
         +fish
-        +lsp
-        +tree-sitter)                ; she sells {ba,z,fi}sh shells on the C xor
+        +lsp)                ; she sells {ba,z,fi}sh shells on the C xor
        ;;sml
        ;;solidity          ; do you need a blockchain? No.
        ;;swift             ; who asked for emoji variables?

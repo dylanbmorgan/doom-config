@@ -7,7 +7,6 @@
 
 * Introduction
 GNU Emacs is an extendable and highly customisable text editor. It is based on an Emacs Lisp interpreter with extensions for text editing. Emacs has been extended in essentially all areas of computing, giving rise to a vast array of packages supporting, e.g., email, IRC and XMPP messaging, spreadsheets, remote server editing, and much more. Emacs includes extensive documentation on all aspects of the system, from basic editing to writing large Lisp programs. It has full Unicode support for nearly all human languages.
-
 ** Installation Instructions
 1.
     #+begin_src shell :eval no :tangle no
@@ -20,7 +19,6 @@ GNU Emacs is an extendable and highly customisable text editor. It is based on a
 4. Waste lots of time learning how to use Emacs, tweaking the configuration yourself, get frustrated, and ultimately return to using vim or VS Code
 
 ** TODO Use-package guide
-
 * Setup
 ** Lexical Binding
 
@@ -28,6 +26,31 @@ I think this has to go at the top of the file (almost like a shebang)
 
 #+begin_src emacs-lisp
 ;;; $DOOMDIR/config.el -*- lexical-binding: t; -*-
+#+end_src
+
+** Personal Information
+Some functionality uses this to identify you, e.g. GPG configuration, email clients, file templates, and snippets.
+
+Set the GPG directories and increase the cache expiry
+
+#+begin_src emacs-lisp
+(setq user-full-name (password-store-get "emacs/personal_info/name")
+      user-mail-address (password-store-get "emacs/personal_info/email"))
+#+end_src
+
+** Authentication
+#+begin_src emacs-lisp
+(setq epg-gpg-program "/opt/homebrew/bin/gpg")
+
+(after! epa
+  (setq epg-pinentry-mode nil))
+
+(after! password-store
+  (setq epa-file-encrypt-to (list (password-store-get "emacs/personal_info/email"))))
+
+(after! auth-source
+  (setq auth-sources '("~/.authinfo.gpg")
+        auth-source-cache-expiry 21600))
 #+end_src
 
 ** Browser
@@ -48,6 +71,7 @@ Enable usage of the atomic extension
 #+end_src
 
 ** Buffers
+
 + I’d much rather have my new buffers in org-mode than fundamental-mode
 + Nicer default buffer names
 + Only include the buffer name in the title, and then if applicable, the project folder
@@ -62,11 +86,13 @@ Enable usage of the atomic extension
 (setq frame-title-format
       '(""
         (:eval
-         (if (s-contains-p org-roam-directory (or buffer-file-name ""))
-             (replace-regexp-in-string
-              ".*/[0-9]*-?" "☰ "
-              (subst-char-in-string ?_ ?  buffer-file-name))
-           "%b"))
+         (let ((fname (buffer-file-name)))
+           (if (and fname (boundp 'org-roam-directory) org-roam-directory
+                    (s-contains-p org-roam-directory fname))
+               (replace-regexp-in-string
+                ".*/[0-9]*-?" "☰ "
+                (subst-char-in-string ?_ ?  fname))
+             "%b")))
         (:eval
          (let ((project-name (projectile-project-name)))
            (unless (string= "-" project-name)
@@ -79,73 +105,10 @@ Enable usage of the atomic extension
       :desc "History" "h" #'consult-history)
 #+end_src
 
-** ChatGPT-Shell
-Lazy load API key and add keybindings for usage
-
-# #+begin_src emacs-lisp
-# (use-package! chatgpt-shell
-#   :config
-#   (setq chatgpt-shell-openai-key
-#         (lambda ()
-#           (auth-source-pick-first-password :host "api.openai.com")))
-#   (setq chatgpt-shell-anthropic-key
-#         (lambda ()
-#           (auth-source-pick-first-password :host "api.anthropic.com")))
-#   (setq chatgpt-shell-model-version "gpt-4o")
-#   (setq chatgpt-shell-insert-dividers t))
-
-# (map! :leader
-#       (:prefix-map ("a" . "ai")
-#        :desc "chatgpt shell" "a" #'chatgpt-shell
-#        :desc "C-c C-c" "C" #'chatgpt-shell-ctrl-c-ctrl-c
-#        (:prefix ("d" . "describe")
-#         :desc "code" "c" #'chatgpt-shell-describe-code
-#         :desc "image" "i" #'chatgpt-shell-describe-image)
-#        :desc "edit block" "e" #'chatgpt-shell-edit-block-at-point
-#        :desc "execute babel" "B" #'chatgpt-shell-execute-babel-block-action-at-point
-#        :desc "execute block" "b" #'chatgpt-shell-execute-block-action-at-point
-#        :desc "fix error" "E" #'chatgpt-shell-fix-error-at-point
-#        :desc "create unit test" "u" #'chatgpt-shell-generate-unit-test
-#        :desc "interrupt" "I" #'chatgpt-shell-interrupt
-#        :desc "awesome prompts" "A" #'chatgpt-shell-load-awesome-prompts
-#        :desc "mark dwim" "M" #'chatgpt-shell-mark-at-point-dwim
-#        :desc "version" "V" #'chatgpt-shell-model-version
-#        :desc "next" "n" #'chatgpt-shell-next-item
-#        :desc "previous" "N" #'chatgpt-shell-previous-item
-#        :desc "prompt minibuffer" "f" #'chatgpt-shell-prompt
-#        (:prefix ("p" . "prompt compose")
-#         :desc "prompt" "p" #'chatgpt-shell-prompt-compose
-#         :desc "from kill-ring" "k" #'chatgpt-shell-prompt-appending-kill-ring
-#         :desc "cancel" "Q" #'chatgpt-shell-prompt-compose-cancel
-#         :desc "insert block" "i" #'chatgpt-shell-prompt-compose-insert-block-at-point
-#         :desc "next history" "h" #'chatgpt-shell-prompt-compose-next-history
-#         :desc "next item" "n" #'chatgpt-shell-prompt-compose-next-item
-#         :desc "buffer" "b" #'chatgpt-shell-prompt-compose-other-buffer
-#         :desc "previous history" "H" #'chatgpt-shell-prompt-compose-previous-history
-#         :desc "previous item" "N" #'chatgpt-shell-prompt-compose-previous-item
-#         :desc "quit" "q" #'chatgpt-shell-prompt-compose-quit-and-close-frame
-#         :desc "refresh" "R" #'chatgpt-shell-prompt-compose-refresh
-#         :desc "reply" "r" #'chatgpt-shell-prompt-compose-reply
-#         :desc "search history" "s" #'chatgpt-shell-prompt-compose-search-history
-#         :desc "send" "S" #'chatgpt-shell-prompt-compose-send-buffer
-#         :desc "swap prompt" "P" #'chatgpt-shell-prompt-compose-swap-system-prompt
-#         :desc "swap model" "m" #'chatgpt-shell-prompt-compose-swap-model-version)
-#        :desc "insert" "i" #'chatgpt-shell-quick-insert
-#        :desc "refactor code" "r" #'chatgpt-shell-refactor-code
-#        :desc "transcript restore" "T" #'chatgpt-shell-restore-session-from-transcript
-#        :desc "transcript save" "t" #'chatgpt-shell-save-session-transcript
-#        :desc "history search" "h" #'chatgpt-shell-search-history
-#        :desc "send and review" "S" #'chatgpt-shell-send-and-review-region
-#        :desc "send" "s" #'chatgpt-shell-send-region
-#        :desc "swap model" "m" #'chatgpt-shell-swap-model
-#        :desc "swap prompt" "P" #'chatgpt-shell-swap-system-prompt
-#        :desc "view" "v" #'chatgpt-shell-view-at-point
-#        :desc "view code" "V" #'chatgpt-shell-view-block-at-point
-#        :desc "git commit" "g" #'chatgpt-shell-write-git-commit))
-# #+end_src
-
 ** TODO Completions
 *** Corfu
+Configure Corfu for in-buffer completion with cycling and directory preselection
+
 #+begin_src emacs-lisp
 (use-package! corfu
   :defer t
@@ -155,7 +118,6 @@ Lazy load API key and add keybindings for usage
 #+end_src
 
 *** TODO Cape
-
 ** Delays
 I like to have custom delays for company mode, the leader key, and the spell checker:
 
@@ -302,20 +264,8 @@ Increase the threshold of errors before flycheck gives up
   (setq flycheck-checker-error-threshold 10000))
 #+end_src
 
-Also use languagetool with flycheck. Removed because it refuses to work with LaTeX-mode
-
-# #+begin_src emacs-lisp
-# (use-package! flycheck-languagetool
-#   :hook (text-mode . flycheck-languagetool-setup)
-#   :init
-#   (when (string= (system-name) "maccie")
-#     (setq flycheck-languagetool-server-jar "/opt/homebrew/Cellar/languagetool/6.6/libexec/languagetool-server.jar"))
-#   :custom
-#   (add-to-list 'flycheck-languagetool-language 'LaTeX-mode)
-#   (setq flycheck-languagetool-language "en-GB"))
-# #+end_src
-
 ** General
+
 + Let Emacs know I am using fish as my default shell
 + Delete files to trash
 + Stretch cursor to the glyph width
@@ -333,8 +283,10 @@ Also use languagetool with flycheck. Removed because it refuses to work with LaT
 + Enable nice scrolling
 
 #+begin_src emacs-lisp
-;; Change the default shell to fish
+
+;; Use fish for interactive shells, /bin/sh for non-interactive (org-babel, TRAMP)
 (setq explicit-shell-file-name (executable-find "fish"))
+(setq shell-file-name "/bin/sh")
 
 ;; Use the system trash
 (setq delete-by-moving-to-trash t
@@ -383,46 +335,41 @@ Also use languagetool with flycheck. Removed because it refuses to work with LaT
   (setq scroll-conservatively 10
         scroll-margin 0))
         ;; scroll-margin 2))  ; TODO when scroll-margin 2 is supported
-
-;; (setq epg-gpg-program "/opt/homebrew/bin/gpg")
 #+end_src
 
-** GPTel
-#+begin_src emacs-lisp
-;; (use-package! gptel
-;;  :config
-;;  (setq! gptel-api-key "your key"))
+** LLMs
+*** gptel 
+Use GitHub Copilot as the GPTel backend with auto-scrolling and cursor positioning after responses
 
-(after! gptel
-  ;; (gptel-make-gh-copilot "Copilot")
-  (setq gptel-backend (gptel-make-gh-copilot "Copilot")
-        gptel-model 'gpt-4.1)
+#+begin_src emacs-lisp
+(use-package! gptel
+  :config
+  (setq gptel-backend (gptel-make-anthropic "Claude"
+                        :stream t
+                        :key #'gptel-api-key-from-auth-source)
+        gptel-model 'claude-opus-4-6)
+  
+  (gptel-make-gh-copilot "Copilot")
 
   (add-hook 'gptel-post-stream-hook 'gptel-auto-scroll)
   (add-hook 'gptel-post-response-functions 'gptel-end-of-response))
+
+(set-popup-rule! "\\*\\(Claude\\|Copilot\\)\\*"
+  :side 'right
+  :width 0.3
+  :select t)
 #+end_src
 
-** TODO Languagetool
-#+begin_src emacs-lisp
-(use-package! languagetool
-  :defer t
-  :commands (languagetool-check
-             languagetool-clear-suggestions
-             languagetool-correct-at-point
-             languagetool-correct-buffer
-             languagetool-set-language
-             languagetool-server-mode
-             languagetool-server-start
-             languagetool-server-stop)
-  :config
-  (when (string= (system-name) "maccie")
-    (setq languagetool-java-arguments '("-Dfile.encoding=UTF-8")
-          languagetool-console-command "/opt/homebrew/Cellar/languagetool/6.6/libexec/languagetool-commandline.jar"
-          languagetool-server-command "/opt/homebrew/Cellar/languagetool/6.6/libexec/languagetool-server.jar"
-          (let ((credential (auth-source-user-and-password "languagetool")))
-            (setq languagetool-username (car credential)
-                  languagetool-api-key (cadr credential))))))
-#+end_src
+*** Claude Code
+ #+begin_src emacs-lisp
+ (use-package! claude-code-ide
+   :config
+   (claude-code-ide-emacs-tools-setup)) ; Optionally enable Emacs MCP tools
+ 
+ (map! :leader
+       :prefix "o l"
+       "c" #'claude-code-ide-menu)
+ #+end_src
 
 ** Lines
 This determines the style of line numbers in effect. If set to `nil', line numbers are disabled. For relative line numbers, set this to `relative'.
@@ -436,19 +383,6 @@ Automatically wrap text when it reaches the end of the screen
 (setq visual-line-fringe-indicators '(left-curly-arrow right-curly-arrow))
 
 ;; (setq-default auto-fill-function 'do-auto-fill)
-#+end_src
-
-** Personal Information
-Some functionality uses this to identify you, e.g. GPG configuration, email clients, file templates, and snippets.
-
-Set the GPG directories and increase the cache expiry
-
-#+begin_src emacs-lisp
-(setq user-full-name (password-store-get "emacs/personal_info/name")
-      user-mail-address (password-store-get "emacs/personal_info/email"))
-
-(after! auth-source
-  (setq auth-source-cache-expiry 21600))  ; Change default to 6 hours to get me through most of a work day
 #+end_src
 
 ** Projectile
@@ -564,6 +498,7 @@ Setup the systemd file here
 I frequently want to make use of Emacs while in a terminal emulator. To make this easier, I can construct a few handy aliases.
 
 However, a little convenience script in ~/.local/bin can have the same effect, be available beyond the specific shell I plop the alias in, then also allow me to add a few bells and whistles — namely:
+
 - Accepting stdin by putting it in a temporary file and immediately opening it.
 - Guessing that the tty is a good idea when $DISPLAY is unset (relevant with SSH sessions, among other things).
 - With a whiff of 24-bit colour support, sets TERM variable to a terminfo that (probably) announces 24-bit colour support.
@@ -717,6 +652,7 @@ Faster than the default scp (for small files)
 
 #+begin_src emacs-lisp
 (setq tramp-default-method "ssh")
+(setq tramp-default-remote-shell "/bin/sh")
 #+end_src
 
 Improve tramp prompt recognition
@@ -739,6 +675,7 @@ Firstly, set the default margin
 # #+end_src
 
 *** Within Emacs
+
 + Make Doom Emacs ask which buffer to see after splitting a window.
 + Take new window space from all other windows (not just current).
 + Window rotation is nice, and can be found under SPC w r and SPC w R.
@@ -756,8 +693,6 @@ Firstly, set the default margin
   (consult-buffer))
 
 (setq window-combination-resize t)
-
-(add-to-list 'initial-frame-alist '(fullscreen . maximized))
 #+end_src
 
 ** Yasnippets
@@ -787,6 +722,7 @@ Smart parentheses and inline LaTeX
 * Appearance
 ** Fonts
 Doom exposes five (optional) variables for controlling fonts in Doom. Here are the three important ones:
+
 + `doom-font'
 + `doom-variable-pitch-font'
 + `doom-big-font' -- used for `doom-big-font-mode'
@@ -974,6 +910,8 @@ Automatically generate Doom Emacs logo based on the colour-scheme used
 #+end_src
 
 ** Tabs
+Disable centaur-tabs by default but configure their appearance for when they are toggled on
+
 #+begin_src emacs-lisp
 (after! centaur-tabs
   (centaur-tabs-mode -1)
@@ -996,6 +934,21 @@ I want to change the theme depending on the time of day. There is a package for 
 Also add blur and opacity
 
 #+begin_src emacs-lisp
+;; (set-frame-parameter nil 'ns-alpha-elements
+;;                      '(
+;;                        ns-alpha-default
+;;                        ns-alpha-fringe
+;;                        ns-alpha-box
+;;                        ns-alpha-stipple
+;;                        ns-alpha-relief
+;;                        ns-alpha-glyphs
+;;                        ))
+
+;; (set-frame-parameter nil 'alpha-background 0.75)
+;; (set-frame-parameter nil 'ns-background-blur 100)
+#+end_src
+
+#+begin_src emacs-lisp
 ;; (after! solar
 ;;   (setq calendar-latitude (string-to-number (password-store-get "emacs/solar/latitude")))
 ;;   (setq calendar-longitude (string-to-number (password-store-get "emacs/solar/longitude"))))
@@ -1012,7 +965,7 @@ Also add blur and opacity
 ;; (add-to-list 'default-frame-alist '(alpha 85 85))
 
 ;; (doom/set-frame-opacity 100)
-(doom/set-frame-opacity 95)
+;; (doom/set-frame-opacity 95)
 ;; (doom/set-frame-opacity 85)
 #+end_src
 
@@ -1068,6 +1021,8 @@ Then define the keybindings to use for Github copilot
 #+end_src
 
 **** Chat
+Configure Copilot Chat with an org-mode frontend and extensive keybindings for code review, explanation, and generation
+
 #+begin_src emacs-lisp
 (after! copilot-chat
   (setq copilot-chat-frontend 'org
@@ -1107,6 +1062,8 @@ Then define the keybindings to use for Github copilot
 #+end_src
 
 *** Indent Bars
+Display visual indentation guides in programming buffers using treesitter-aware indent bars
+
 #+begin_src emacs-lisp
 (add-hook! 'prog-mode-hook #'indent-bars-mode)
 
@@ -1216,6 +1173,8 @@ Set Fortran and Fortran 90 mode for appropriate extensions
 #+end_src
 
 *** LSP
+Enable the language server for Fortran 90 buffers
+
 #+begin_src emacs-lisp
 (use-package! lsp-mode
   :hook (f90-mode . lsp-deferred))
@@ -1235,6 +1194,8 @@ Set the default number of Julia threads to 6
 #+end_src
 
 *** Snail
+Use Julia Snail as the REPL interface with history and formatting extensions
+
 #+begin_src emacs-lisp
 ;; (after! julia-mode
 ;;   (setq julia-snail-extensions '(repl-history formatter ob-julia)))
@@ -1272,6 +1233,8 @@ Enable formatting on save for Julia buffers
 #+end_src
 
 *** LSP
+Enable LSP and Snail together in Julia buffers, pointing to a dedicated Julia environment for the language server
+
 #+begin_src emacs-lisp
 (after! julia-mode
   (add-hook! 'julia-mode-hook #'lsp-mode)
@@ -1285,12 +1248,15 @@ Enable formatting on save for Julia buffers
 
 ** LaTeX
 *** Biblio
+Set the default bibliography file for citation completion
+
 #+begin_src emacs-lisp
 (setq! bibtex-completion-bibliography '("~/Documents/warwick/thesus/references.bib"))
 #+end_src
 
 *** CDLaTeX
 Set new environments for:
+
 + Non-numbered equations
 + Non-numbered equations with bmatrix
 
@@ -1412,12 +1378,12 @@ Set the lsp servers for use in latex mode
         lsp-ltex-plus-language "en-GB"
         lsp-ltex-plus-disabled-rules '(:en-GB ["OXFORD_SPELLING_Z_NOT_S"])
         lsp-ltex-plus-completion-enabled t
-        lsp-ltex-plus-languagetool-http-server-uri ""
+        ;; lsp-ltex-plus-languagetool-http-server-uri ""
         lsp-ltex-plus-additional-rules-enable-picky-rules t))
 
-(let ((credential (auth-source-user-and-password "languagetool")))
-  (setq lsp-ltex-plus-languagetool-org-username (car credential)
-        lsp-ltex-plus-languagetool-org-api-key (cadr credential)))
+;; (let ((credential (auth-source-user-and-password "languagetool")))
+;;   (setq lsp-ltex-plus-languagetool-org-username (car credential)
+;;         lsp-ltex-plus-languagetool-org-api-key (cadr credential)))
 
 (after! LaTeX-mode
   ;; When on mac
@@ -1586,6 +1552,7 @@ Configure lsp-ui settings
 
 *** Org
 Enable LSP in org edit buffer special for the following languages:
+
 - python
 - bash
 - julia
@@ -1717,12 +1684,16 @@ Replace default (black) to use ruff for sorting imports and formatting
 #+end_src
 
 **** Ruff
+Only show LSP notifications from Ruff on errors to reduce noise
+
 #+begin_src emacs-lisp
 (after! lsp-ruff
   (setq lsp-ruff-show-notifications "onError"))
 #+end_src
 
 **** Pyright
+Configure Pyright for auto-imports, completions, and basic type checking
+
 #+begin_src emacs-lisp
 (after! lsp-pyright
   (setq lsp-pyright-disable-language-services nil
@@ -1750,6 +1721,8 @@ Automatically create documentation for a function using the numpy standard
 #+end_src
 
 *** UV
+Automatically activate uv virtual environments in Python buffers and add keybindings to manage them
+
 #+begin_src emacs-lisp
 (add-hook! 'python-mode #'uv-mode-auto-activate-hook)
 
@@ -1761,6 +1734,8 @@ Automatically create documentation for a function using the numpy standard
 
 ** Rust
 *** Formatters and Linters
+Enable format-on-save and use rust-analyzer as the LSP backend
+
 #+begin_src emacs-lisp
 (after! rustic
    (setq rustic-format-on-save t)
@@ -1770,27 +1745,28 @@ Automatically create documentation for a function using the numpy standard
 #+end_src
 
 *** DAP
-#+begin_src emacs-lisp
-(after! rustic
-  (require 'dap-cpptools)
-  (dap-register-debug-template "Rust::GDB Run Configuration"
-                               (list :type "gdb"
-                                     :request "launch"
-                                     :name "GDB::Run"
-                                     :gdbpath "rust-gdb"
-                                     :target nil
-                                     :cwd nil)))
-#+end_src
+# #+begin_src emacs-lisp
+# (after! rustic
+#   (require 'dap-cpptools)
+#   (dap-register-debug-template "Rust::GDB Run Configuration"
+#                                (list :type "gdb"
+#                                      :request "launch"
+#                                      :name "GDB::Run"
+#                                      :gdbpath "rust-gdb"
+#                                      :target nil
+#                                      :cwd nil)))
+# #+end_srC
 
 * Org-mode
 ** Agenda
+Recursively include all org files in the org directory for the agenda view
+
 #+begin_src emacs-lisp
 (after! org
   (setq org-agenda-files (directory-files-recursively "~/Documents/org/" "\\.org$")))
 #+end_src
 
 *** TODO Super Agenda
-
 #+begin_src emacs-lisp
 ;; (use-package org-super-agenda
 ;;   :after org-agenda
@@ -1892,16 +1868,19 @@ Toggle pretty entities in org mode when the cursor moves over them
 #+end_src
 
 ** Attach
+Configure org attachments to use symlinks and store them in a centralised directory
+
 #+begin_src emacs-lisp
 (after! org
   (setq org-attach-id-dir "~/Documents/org/.attach/"
         org-attach-dir-relative t
-        org-attach-method 'lns
+        org-attach-method 'mv
         org-attach-archive-delete 'query
         org-attach-auto-tag "attach"))
 #+end_src
 
 ** Babel
+
 + Use python code blocks in org mode (as well as some other languages thrown in)
 + Don't require :results output as a header in python SRC blocks
 + Formatting for source code blocks
@@ -2114,6 +2093,7 @@ I also export a lot of org files to markdown and LaTeX so I will also add anothe
 
 ** File Conversions
 Leaving org is sad. Thankfully, there's a way around this!
+
 + Package installed in packages.el
 
 #+begin_src emacs-lisp
@@ -2122,6 +2102,7 @@ Leaving org is sad. Thankfully, there's a way around this!
 #+end_src
 
 ** General
+
 + Default file location
   - If you use `org' and don't want your org files in the default location below,
     change `org-directory'. It must be set before org loads!
@@ -2142,6 +2123,8 @@ Leaving org is sad. Thankfully, there's a way around this!
 #+end_src
 
 *** Special Block Extras
+Enable extra org special block types for richer document export
+
 #+begin_src emacs-lisp
 (use-package! org-special-block-extras
   :hook (org-mode . org-special-block-extras-mode))
@@ -2167,6 +2150,180 @@ Set plain list indents such that the bullet point style signifies the indentatio
 
   (setq org-list-use-circular-motion t
         org-list-allow-alphabetical t))
+#+end_src
+
+Automatically normalize blank lines in org buffers so that a blank line appears before a sibling entry (heading or list item) only when the previous sibling had nested content underneath it. Consecutive simple entries have no blank line between them.
+
+#+begin_src emacs-lisp
+(defun dm/org--indent-length (s)
+  "Return the visual indentation length of string S (tabs = 8 spaces)."
+  (length (replace-regexp-in-string "\t" "        " s)))
+
+(defun dm/org--heading-boundary ()
+  "Return the position of the previous heading line, or `point-min'."
+  (save-excursion
+    (if (re-search-backward "^\\*+ " nil t)
+        (line-beginning-position)
+      (point-min))))
+
+(defun dm/org--find-prev-sibling-item (indent-len limit)
+  "Search backward from point for a list item at INDENT-LEN, stopping at LIMIT.
+Skip items at deeper indent levels.  Stop if a less-indented item
+or a heading is reached."
+  (let ((found nil)
+        (item-re "^\\([ \t]*\\)\\([-+]\\|[0-9]+[.)]\\|[a-zA-Z][.)]\\) "))
+    (save-excursion
+      (while (and (not found)
+                  (re-search-backward item-re limit t))
+        (let ((candidate-indent-len (dm/org--indent-length (match-string 1))))
+          (cond
+           ((= candidate-indent-len indent-len) (setq found (point)))
+           ((< candidate-indent-len indent-len) (goto-char limit))))))
+    found))
+
+(defun dm/org--prev-sibling-has-nested (prev-item-pos item-bol indent-len)
+  "Check if the list item at PREV-ITEM-POS has nested content before ITEM-BOL.
+INDENT-LEN is the visual indent of both sibling items."
+  (save-excursion
+    (goto-char prev-item-pos)
+    (let ((prev-eol (line-end-position))
+          (has-nested nil))
+      (goto-char prev-eol)
+      (while (and (not has-nested)
+                  (< (point) item-bol)
+                  (zerop (forward-line 1))
+                  (< (point) item-bol))
+        (when (not (looking-at-p "^[ \t]*$"))
+          (let* ((line-indent (if (looking-at "^\\([ \t]*\\)")
+                                  (match-string 1) ""))
+                 (line-indent-len (dm/org--indent-length line-indent)))
+            (when (> line-indent-len indent-len)
+              (setq has-nested t)))))
+      has-nested)))
+
+(defun dm/org-normalize-blank-lines ()
+  "Normalize blank lines in org buffers.
+Insert a blank line before a heading or list item only if the
+previous sibling at the same level had nested content underneath it.
+Remove blank lines between consecutive simple siblings.
+Two-phase: collect edits first, apply bottom-to-top so positions stay valid."
+  (interactive)
+  (save-excursion
+    ;; Phase 0: collapse runs of 3+ newlines to exactly 2
+    (goto-char (point-min))
+    (while (re-search-forward "\n\\{3,\\}" nil t)
+      (replace-match "\n\n"))
+
+    ;; Phase 1: collect all edit actions
+    (let ((actions nil)
+          (item-re "^\\([ \t]*\\)\\([-+]\\|[0-9]+[.)]\\|[a-zA-Z][.)]\\) "))
+
+      ;; Headings
+      (goto-char (point-min))
+      (while (re-search-forward "^\\(\\*+\\) " nil t)
+        (let* ((level (length (match-string 1)))
+               (heading-bol (line-beginning-position))
+               ;; Count blank lines before this heading
+               (blanks 0)
+               (pos heading-bol))
+          (save-excursion
+            (goto-char pos)
+            (while (and (> pos (point-min))
+                        (progn (forward-line -1)
+                               (looking-at-p "^$")))
+              (setq blanks (1+ blanks)
+                    pos (point))))
+          ;; Check what the previous non-blank line is
+          (save-excursion
+            (goto-char pos)
+            (when (> pos (point-min))
+              (forward-line -1)
+              (cond
+               ;; Previous non-blank line is a heading — no blank line wanted
+               ((looking-at-p "^\\*+ ")
+                (when (> blanks 0)
+                  (push (list 'delete pos heading-bol blanks) actions)))
+               ;; Otherwise check for same-level sibling with content
+               (t
+                (goto-char heading-bol)
+                (when (re-search-backward (format "^\\*\\{%d\\} " level) nil t)
+                  (let* ((prev-end (line-end-position))
+                         (region (buffer-substring-no-properties prev-end heading-bol))
+                         (has-content (string-match-p
+                                       "^[^\n*]"
+                                       (replace-regexp-in-string "\\`\n+" "" region))))
+                    (if has-content
+                        (when (= blanks 0)
+                          (push (list 'insert heading-bol "\n") actions))
+                      (when (> blanks 0)
+                        (push (list 'delete pos heading-bol blanks) actions)))))))))))
+
+      ;; List items
+      (goto-char (point-min))
+      (while (re-search-forward item-re nil t)
+        (let* ((indent (match-string 1))
+               (indent-len (dm/org--indent-length indent))
+               (item-bol (line-beginning-position))
+               (boundary (save-excursion
+                           (goto-char item-bol)
+                           (dm/org--heading-boundary)))
+               (prev-pos (save-excursion
+                           (goto-char item-bol)
+                           (dm/org--find-prev-sibling-item indent-len boundary))))
+          (when prev-pos
+            (let* ((has-nested (dm/org--prev-sibling-has-nested
+                                prev-pos item-bol indent-len))
+                   ;; Count existing blank lines before this item
+                   (blanks 0)
+                   (pos item-bol))
+              (save-excursion
+                (goto-char pos)
+                (while (and (> pos (point-min))
+                            (progn (forward-line -1)
+                                   (looking-at-p "^$")))
+                  (setq blanks (1+ blanks)
+                        pos (point))))
+              (if has-nested
+                  (when (= blanks 0)
+                    (push (list 'insert item-bol "\n") actions))
+                (when (> blanks 0)
+                  (push (list 'delete pos item-bol blanks) actions)))))))
+
+      ;; Phase 2: apply edits bottom-to-top so positions remain valid
+      (setq actions (sort actions (lambda (a b) (> (cadr a) (cadr b)))))
+      (dolist (act actions)
+        (pcase (car act)
+          ('insert
+           (goto-char (cadr act))
+           (insert (caddr act)))
+          ('delete
+           ;; Delete `n' blank lines: each is 1 char (the newline)
+           (let ((start (cadr act))
+                 (n (cadddr act)))
+             (goto-char start)
+             (delete-region start (+ start n)))))))))
+
+(defun dm/org-normalize-blank-lines-deferred (&rest _)
+  "Run blank line normalization after a short idle delay."
+  (when (derived-mode-p 'org-mode)
+    (run-with-idle-timer 0.1 nil #'dm/org-normalize-blank-lines)))
+
+(advice-add 'org-insert-heading :after #'dm/org-normalize-blank-lines-deferred)
+(advice-add 'org-insert-item :after #'dm/org-normalize-blank-lines-deferred)
+(advice-add 'org-shiftmetaleft :after #'dm/org-normalize-blank-lines-deferred)
+(advice-add 'org-shiftmetaright :after #'dm/org-normalize-blank-lines-deferred)
+(advice-add 'org-metaleft :after #'dm/org-normalize-blank-lines-deferred)
+(advice-add 'org-metaright :after #'dm/org-normalize-blank-lines-deferred)
+(advice-add 'org-metareturn :after #'dm/org-normalize-blank-lines-deferred)
+(advice-add 'org-promote-subtree :after #'dm/org-normalize-blank-lines-deferred)
+(advice-add 'org-demote-subtree :after #'dm/org-normalize-blank-lines-deferred)
+(advice-add 'org-promote :after #'dm/org-normalize-blank-lines-deferred)
+(advice-add 'org-demote :after #'dm/org-normalize-blank-lines-deferred)
+
+(add-hook 'before-save-hook
+          (lambda ()
+            (when (derived-mode-p 'org-mode)
+              (dm/org-normalize-blank-lines))))
 #+end_src
 
 Change the heading weights
@@ -2296,25 +2453,25 @@ Enable cdlatex by default and edit an environment after inserting one.
 #+end_src
 
 *** TODO In-line Fragments
+
 - Use the [[https://git.tecosaur.net/tec/org-mode.git][new]] org-mode preview functionality
 - Increase the rendered equation size slightly 
 - Live preview to essentially replace fragtog
 
-#+begin_src emacs-lisp
-(add-hook! 'org-mode-hook #'org-latex-preview-mode)
+# #+begin_src emacs-lisp
+# (add-hook! 'org-mode-hook #'org-latex-preview-mode)
 
-(use-package! org-latex-preview
-  :after org
-  :config
-  (plist-put org-latex-preview-appearance-options :page-width 1.0)
-  (plist-put org-latex-preview-appearance-options :zoom 1.2)
-  (setq org-latex-preview-mode-display-live t
-        org-latex-preview-mode-update-delay 0.0))
-#+end_src
+# (use-package! org-latex-preview
+#   :after org
+#   :config
+#   (plist-put org-latex-preview-appearance-options :page-width 1.0)
+#   (plist-put org-latex-preview-appearance-options :zoom 1.2)
+#   (setq org-latex-preview-mode-display-live t
+#         org-latex-preview-mode-update-delay 0.0))
+# #+end_src
 
 *** Org Code Blocks
 Use engraved instead of verbatim src blocks. I used to use listings but have since upgraded to engraved
-
 + One annoyance with this is the interaction between =microtype= and =verbatim= environments. Protrusion is not desirable here. Thankfully, we can patch the =verbatim= environment to turn off protrusion locally.
 + Also have the example block be styled similarly
 
@@ -2493,7 +2650,6 @@ Lets try this stuff from Scimax
 #                (car args)))))
 
 #     (apply orig-func args))
-
 
 #   (defun scimax-toggle-latex-equation-numbering ()
 #     "Toggle whether LaTeX fragments are numbered."
@@ -2678,13 +2834,35 @@ Make all the things look pretty
 #+end_src
 
 ** Roam
+Configure org-roam with capture templates for filing new nodes into subdirectories (personal, research, tech, work)
+
 #+begin_src emacs-lisp
 (after! org-roam
   (setq org-roam-directory "~/Documents/org/roaming/"
         org-roam-completion-everywhere t
         org-roam-db-location "~/Documents/org/roaming/org-roam.db"
         org-roam-db-autosync-mode t
-        org-roam-completion-everywhere t))
+        org-roam-capture-templates
+        '(("d" "default" plain "%?"
+           :target (file+head "%<%Y%m%d%H%M%S>-${slug}.org"
+                              "#+title: ${title}\n")
+           :unnarrowed t)
+          ("p" "personal" plain "%?"
+           :target (file+head "personal/%<%Y%m%d%H%M%S>-${slug}.org"
+                              "#+title: ${title}\n")
+           :unnarrowed t)
+          ("r" "research" plain "%?"
+           :target (file+head "research/%<%Y%m%d%H%M%S>-${slug}.org"
+                              "#+title: ${title}\n")
+           :unnarrowed t)
+          ("t" "tech" plain "%?"
+           :target (file+head "tech/%<%Y%m%d%H%M%S>-${slug}.org"
+                              "#+title: ${title}\n")
+           :unnarrowed t)
+          ("w" "work" plain "%?"
+           :target (file+head "work/%<%Y%m%d%H%M%S>-${slug}.org"
+                              "#+title: ${title}\n")
+           :unnarrowed t))))
 
 (map! :leader
       :prefix "n"
@@ -2702,6 +2880,7 @@ Make all the things look pretty
 #+end_src
 
 *** TODO Roam UI
+Provide a graphical web UI for browsing and visualising the org-roam knowledge graph using xwidget-webkit
 
 #+begin_src emacs-lisp
 (use-package! websocket
@@ -2840,12 +3019,33 @@ Typing out src block headers all the time is a pain
 # #+end_src
 
 ** SRC Blocks
-- Add tree sitter language modes
+
+- Map src block languages to tree-sitter modes for syntax highlighting
+  
+- Map =json= blocks to =js-json-mode= (built-in) instead of =json-mode=.
+  Doom's =+tree-sitter= flag adds =json-mode= to =major-mode-remap-alist=,
+  silently redirecting it to =json-ts-mode=. Org's fontification engine uses
+  traditional =font-lock=, which is incompatible with tree-sitter modes, so
+  the highlighting never applies. =js-json-mode= avoids the remap and uses
+  =font-lock= natively.
+
+- Map =http= blocks to =restclient-mode= (provided by Doom's =rest= module)
+  for HTTP verb/header highlighting
+
+- Define a no-op babel execute function for JSON so =C-c C-c= doesn't error
+  with "no org-babel-execute function for json"
 
 #+begin_src emacs-lisp
 (after! org
-  (add-to-list 'org-src-lang-modes '("python" . python-ts))
-  (add-to-list 'org-src-lang-modes '("julia" . julia-ts)))
+  (setf (alist-get "python" org-src-lang-modes nil nil #'equal) 'python-ts)
+  (add-to-list 'org-src-lang-modes '("shell" . sh))
+  (add-to-list 'org-src-lang-modes '("julia" . julia-ts))
+  (setf (alist-get "json" org-src-lang-modes nil nil #'equal) 'js-json)
+  (add-to-list 'org-src-lang-modes '("http" . restclient))
+
+  (defun org-babel-execute:json (body _params)
+    "Return the JSON body as-is (no execution)."
+    body))
 #+end_src
 
 - Define a new keybinding to edit source blocks
@@ -3045,6 +3245,7 @@ Here are some additional functions/macros that could help you configure Doom:
  - `add-load-path!' for adding directories to the `load-path', relative to
    this file. Emacs searches the `load-path' when you load packages with
    `require' or `use-package'.
+
  - `map!' for binding new keys
 
  To get information about any of these functions/macros, move the cursor over
